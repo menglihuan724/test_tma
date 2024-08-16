@@ -133,8 +133,7 @@
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    console.log(response.blob())
-    return response.blob();
+    console.log(response)
   })
             if (Telegram.WebApp.MainButton.isVisible) {
                 Telegram.WebApp.MainButton.hide();
