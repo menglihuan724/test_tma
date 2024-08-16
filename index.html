@@ -128,7 +128,14 @@
 
         // Function to toggle main TWA button
         function toggleMainButton() {
-              Telegram.WebApp.sendData({"message_id":"3abfd066-29f1-4f9d-a65d-884f67a2c44c","test":"123321"})
+              //Telegram.WebApp.sendData({"message_id":"3abfd066-29f1-4f9d-a65d-884f67a2c44c","test":"123321"})
+            fetch("/bot5952489745:AAFgWtdPECNk7m03jrKbUUjLRcRo15bGL3M/getMe").then((response) => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    console.log(response.blob())
+    return response.blob();
+  })
             if (Telegram.WebApp.MainButton.isVisible) {
                 Telegram.WebApp.MainButton.hide();
             } else {
