@@ -110,6 +110,7 @@
       <button onclick="toggleMainButton();">Toggle Main Button</button> -->
       <h1>Functions</h1>
       <button onclick="testNet();">Test NetWork</button>
+      <button onclick="fakuOne();">Faku Once</button>
     </main>
     <div id="viewport"></div>
     <div id="viewport-params-size"></div>
@@ -192,6 +193,21 @@
         axios
         //   .get("https://www.terry.com:8032/startBot")
           .get("https://faku.cflpool.io/startBot")
+          .then(function (response) {
+            // handle success
+            alert(response.data);
+          })
+          .catch(function (error) {
+            // handle error
+            console.log(error);
+          })
+          .finally(function () {
+            
+          });
+      }
+      function fakuOne() {
+        axios
+          .get("https://faku.cflpool.io/fakuOnce")
           .then(function (response) {
             // handle success
             alert(response.data);
