@@ -112,6 +112,7 @@
       <button onclick="testNet();">Test NetWork</button>
       <button onclick="fakuOne();" id="faku">Faku Once</button>
       <text id="status"></text>
+      <input id="num" type="number" name="number" min="1" max="4">
     </main>
     <div id="viewport"></div>
     <div id="viewport-params-size"></div>
@@ -206,10 +207,11 @@
           .finally(function () {});
       }
       function fakuOne() {
+       const num = document.getElementById("num").value;
         axios.get(`${base_url}/getFakuStatus`).then((res) => {
           if (res.data == 0 && faku_status == 0) {
             axios
-              .post(`${base_url}/fakuOnce/1`)
+              .post(`${base_url}/fakuOnce/${num}`)
               .then(function (response) {
                 alert(response.data == 0 ? "success" : "failed");
                 faku_status =response.data == 0 ? 1 : 0;
