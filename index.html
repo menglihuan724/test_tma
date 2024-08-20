@@ -110,7 +110,8 @@
       <button onclick="toggleMainButton();">Toggle Main Button</button> -->
       <h1>Functions</h1>
       <button onclick="testNet();">Test NetWork</button>
-      <button onclick="fakuOne();">Faku Once</button>
+      <button onclick="fakuOne();" id="faku">Faku Once</button>
+      <text id="status"></text>
     </main>
     <div id="viewport"></div>
     <div id="viewport-params-size"></div>
@@ -118,6 +119,9 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
     <script>
+        const base_url="https://faku.cflpool.io"
+    //   const base_url = "http://127.0.0.1:7024";
+      let faku_status = 0;
       // Init TWA
       Telegram.WebApp.ready();
 
@@ -189,10 +193,8 @@
         );
       });
       function testNet() {
-        // Make a request for a user with a given ID
         axios
-        //   .get("https://www.terry.com:8032/startBot")
-          .get("https://faku.cflpool.io/startBot")
+          .get(`${base_url}/startBot`)
           .then(function (response) {
             // handle success
             alert(response.data);
@@ -201,25 +203,40 @@
             // handle error
             console.log(error);
           })
-          .finally(function () {
-            
-          });
+          .finally(function () {});
       }
       function fakuOne() {
-        axios
-          .get("https://faku.cflpool.io/fakuOnce")
-          .then(function (response) {
-            // handle success
-            alert(response.data);
-          })
-          .catch(function (error) {
-            // handle error
-            console.log(error);
-          })
-          .finally(function () {
-            
-          });
+        axios.get(`${base_url}/getFakuStatus`).then((res) => {
+          if (res.data == 0 && faku_status == 0) {
+            axios
+              .post(`${base_url}/fakuOnce/1`)
+              .then(function (response) {
+                alert(response.data == 0 ? "success" : "failed");
+                faku_status =response.data == 0 ? 1 : 0;
+              })
+              .catch(function (error) {
+                console.log(error);
+              })
+              .finally(function () {});
+          } else {
+            alert("faku is running");
+          }
+        });
       }
+      async function getFakuStatus() {
+        let res = await axios.get(`${base_url}/getFakuStatus`);
+        return res.data;
+      }
+      setInterval(async () => {
+        if (faku_status == 1) {
+          faku_status = await getFakuStatus();
+        }
+        console.log(faku_status);
+        let status=document.getElementById("status")
+        let faku=document.getElementById("faku")
+        status.innerText=faku_status==0?"idle":"running"
+        // faku.disad
+      }, 10000);
     </script>
 
     <!-- Eruda is console for mobile browsers -->
