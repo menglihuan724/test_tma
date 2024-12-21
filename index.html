@@ -68,6 +68,9 @@
       #viewport-params-expand {
         top: 30px;
       }
+      .top-space{
+        margin-top: 10px;
+      }
     </style>
   </head>
 
@@ -109,10 +112,27 @@
       <button onclick="Telegram.WebApp.expand();">Expand Webview</button>
       <button onclick="toggleMainButton();">Toggle Main Button</button> -->
       <h1>Functions</h1>
-      <button onclick="testNet();">Test NetWork</button>
-      <button onclick="fakuOne();" id="faku">Faku Once</button>
-      <text id="status"></text>
-      <input id="num" type="number" name="number" min="1" max="4">
+      <div class="top-space">
+        <button onclick="testNet();">Test NetWork</button>
+      </div>
+      <div div class="top-space">
+        status:<text id="status">idle</text>
+      </div>
+      <div div class="top-space">
+        <button onclick="fakuOne();" id="faku">Faku Once</button>
+        <input id="num" type="number" name="number" min="1" max="4" />
+        <select name="isLp" id="isLp">
+          <option value="false">从LP</option>
+          <option value="true">从FAKU</option>
+        </select>
+      </div>
+      <div div class="top-space">
+        <button onclick="getByOld();">GetOld</button>
+        <select name="lpAddress" id="lpAddress">
+          <option value="0x943b9b4718826ea7023f79c66e0d40bebbcde22f">LP Old</option>
+          <option value="0x41279398385c7543eaC6d3471650D5a404c904A9">LP New</option>
+        </select>
+      </div>
     </main>
     <div id="viewport"></div>
     <div id="viewport-params-size"></div>
@@ -120,8 +140,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
     <script>
-        const base_url="https://faku.cflpool.io"
-    //   const base_url = "http://127.0.0.1:7024";
+      const base_url = "https://faku.cflpool.io";
+      //   const base_url = "http://127.0.0.1:7024";
       let faku_status = 0;
       // Init TWA
       Telegram.WebApp.ready();
@@ -207,14 +227,18 @@
           .finally(function () {});
       }
       function fakuOne() {
-       const num = document.getElementById("num").value;
+        const num = document.getElementById("num").value;
+        const select = document.getElementById("isLp");
+        const index = select.selectedIndex;
         axios.get(`${base_url}/getFakuStatus`).then((res) => {
           if (res.data == 0 && faku_status == 0) {
             axios
-              .post(`${base_url}/fakuOnce/${num}`)
+              .post(
+                `${base_url}/fakuOnce/${num}/${select.options[index].value}`
+              )
               .then(function (response) {
                 alert(response.data == 0 ? "success" : "failed");
-                faku_status =response.data == 0 ? 1 : 0;
+                faku_status = response.data == 0 ? 1 : 0;
               })
               .catch(function (error) {
                 console.log(error);
@@ -229,14 +253,36 @@
         let res = await axios.get(`${base_url}/getFakuStatus`);
         return res.data;
       }
+      function getByOld() {
+        const select = document.getElementById("lpAddress");
+        const index = select.selectedIndex;
+        axios.get(`${base_url}/getFakuStatus`).then((res) => {
+          if (res.data == 0 && faku_status == 0) {
+            axios
+              .post(
+                `${base_url}/fakuGetOld?lp=${select.options[index].value}`
+              )
+              .then(function (response) {
+                alert(response.data == 0 ? "success" : "failed");
+                faku_status = response.data == 0 ? 1 : 0;
+              })
+              .catch(function (error) {
+                console.log(error);
+              })
+              .finally(function () {});
+          } else {
+            alert("faku is running");
+          }
+        });
+      }
       setInterval(async () => {
         if (faku_status == 1) {
           faku_status = await getFakuStatus();
         }
         console.log(faku_status);
-        let status=document.getElementById("status")
-        let faku=document.getElementById("faku")
-        status.innerText=faku_status==0?"idle":"running"
+        let status = document.getElementById("status");
+        let faku = document.getElementById("faku");
+        status.innerText = faku_status == 0 ? "idle" : "running";
         // faku.disad
       }, 10000);
     </script>
