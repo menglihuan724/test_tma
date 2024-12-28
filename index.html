@@ -122,8 +122,13 @@
         <button onclick="fakuOne();" id="faku">Faku Once</button>
         <input id="num" type="number" name="number" min="1" max="4" />
         <select name="isLp" id="isLp">
-          <option value="false">从LP</option>
           <option value="true">从FAKU</option>
+          <option value="false">从LP</option>
+        </select>
+        <select name="level" id="level">
+          <option value="0">low</option>
+          <option value="1">med</option>
+          <option value="2">high</option>
         </select>
       </div>
       <div div class="top-space">
@@ -141,7 +146,7 @@
     <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
     <script>
       const base_url = "https://faku.cflpool.io";
-      //   const base_url = "http://127.0.0.1:7024";
+        // const base_url = "http://172.21.228.181:7024";
       let faku_status = 0;
       // Init TWA
       Telegram.WebApp.ready();
@@ -230,11 +235,15 @@
         const num = document.getElementById("num").value;
         const select = document.getElementById("isLp");
         const index = select.selectedIndex;
+        const select_2 = document.getElementById("level");
+        const index_2 = select_2.selectedIndex;
+        const isLp=select.options[index].value
+        const level=select_2.options[index_2].value
         axios.get(`${base_url}/getFakuStatus`).then((res) => {
           if (res.data == 0 && faku_status == 0) {
             axios
               .post(
-                `${base_url}/fakuOnce/${num}/${select.options[index].value}`
+                `${base_url}/fakuOnce/${num}/${isLp}/${level}`
               )
               .then(function (response) {
                 alert(response.data == 0 ? "success" : "failed");
