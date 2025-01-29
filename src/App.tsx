@@ -41,8 +41,11 @@ declare global {
     eruda: any;
   }
 }
-
-const BASE_URL = "https://faku.cflpool.io";
+// 使用 import.meta.env 访问环境变量
+const LP_OPTIONS = import.meta.env.VITE_LP_OPTIONS 
+  ? JSON.parse(import.meta.env.VITE_LP_OPTIONS)
+  : [];
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 function App() {
   const [fakuStatus, setFakuStatus] = useState(0);
@@ -220,12 +223,11 @@ function App() {
                 style={{ width: 200 }}
                 onChange={(value: string) => setLpAddress(value)}
               >
-                <Select.Option value="0x943b9b4718826ea7023f79c66e0d40bebbcde22f">
-                  LP Old
-                </Select.Option>
-                <Select.Option value="0x41279398385c7543eaC6d3471650D5a404c904A9">
-                  LP New
-                </Select.Option>
+                {LP_OPTIONS.map(option => (
+                  <Select.Option key={option.value} value={option.value}>
+                    {option.name}
+                  </Select.Option>
+                ))}
               </Select>
               <Button 
                 type="primary"
