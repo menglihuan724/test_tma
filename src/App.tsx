@@ -1,6 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Layout, Card, Button, Input, Select, Space, Typography, Badge, message } from 'antd';
+import { ReloadOutlined, ApiOutlined, RocketOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
 import './index.css';
+
+const { Header, Content } = Layout;
+const { Title } = Typography;
+
+const StyledLayout = styled(Layout)`
+  min-height: 100vh;
+  background: var(--bg-color);
+`;
+
+const StyledHeader = styled(Header)`
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: transparent;
+`;
+
+const StyledContent = styled(Content)`
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+`;
+
+const LogoWrapper = styled.div`
+  text-align: center;
+  margin-bottom: 24px;
+  img {
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+`;
 
 declare global {
   interface Window {
@@ -13,8 +46,13 @@ const BASE_URL = "https://faku.cflpool.io";
 
 function App() {
   const [fakuStatus, setFakuStatus] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
+  const [lpAddress, setLpAddress] = useState<string>('');
+  const [num, setNum] = useState<string>('');
+  const [isLp, setIsLp] = useState<string>('true');
+  const [level, setLevel] = useState<string>('0');
 
   useEffect(() => {
     // Init TWA
@@ -49,31 +87,33 @@ function App() {
 
   const testNet = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${BASE_URL}/startBot`);
-      alert(response.data);
+      message.success(response.data);
     } catch (error) {
-      console.error(error);
+      message.error('Network test failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fakuOne = async () => {
-    const num = (document.getElementById('num') as HTMLInputElement).value;
-    const isLp = (document.getElementById('isLp') as HTMLSelectElement).value;
-    const level = (document.getElementById('level') as HTMLSelectElement).value;
-
     try {
+      setLoading(true);
       const statusRes = await axios.get(`${BASE_URL}/getFakuStatus`);
       if (statusRes.data === 0 && fakuStatus === 0) {
         const response = await axios.post(
           `${BASE_URL}/fakuOnce/${num}/${isLp}/${level}`
         );
-        alert(response.data === 0 ? "success" : "failed");
+        message.success(response.data === 0 ? "Operation successful" : "Operation failed");
         setFakuStatus(response.data === 0 ? 1 : 0);
       } else {
-        alert("faku is running");
+        message.warning("Faku is running");
       }
     } catch (error) {
-      console.error(error);
+      message.error('Operation failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,69 +123,122 @@ function App() {
   };
 
   const getByOld = async () => {
-    const lpAddress = (document.getElementById('lpAddress') as HTMLSelectElement).value;
     try {
       const statusRes = await axios.get(`${BASE_URL}/getFakuStatus`);
       if (statusRes.data === 0 && fakuStatus === 0) {
         const response = await axios.post(
           `${BASE_URL}/fakuGetOld?lp=${lpAddress}`
         );
-        alert(response.data === 0 ? "success" : "failed");
+        message.success(response.data === 0 ? "success" : "failed");
         setFakuStatus(response.data === 0 ? 1 : 0);
       } else {
-        alert("faku is running");
+        message.warning("faku is running");
       }
     } catch (error) {
+      message.error('Operation failed');
       console.error(error);
     }
   };
 
   return (
-    <>
-      <main>
-        <div style={{ textAlign: 'center' }}>
-          <a href="https://www.google.com/">
-            <img width="48" src="./assets/logo.jpeg" alt="logo of faku" />
-          </a>
-        </div>
+    <StyledLayout>
+      <StyledHeader>
+        <Title level={4} style={{ margin: 0, color: 'var(--tg-theme-text-color)' }}>
+          Faku Web
+        </Title>
+      </StyledHeader>
+      
+      <StyledContent>
+        <LogoWrapper>
+          <img width="64" src="./assets/logo.jpeg" alt="logo of faku" />
+        </LogoWrapper>
 
-        <h1>Functions</h1>
-        <div className="top-space">
-          <button onClick={testNet}>Test NetWork</button>
-        </div>
-        <div className="top-space">
-          status: <span>{fakuStatus === 0 ? "idle" : "running"}</span>
-        </div>
-        <div className="top-space">
-          <button onClick={fakuOne} id="faku">Faku Once</button>
-          <input id="num" type="number" name="number" min="1" max="4" />
-          <select name="isLp" id="isLp">
-            <option value="true">从FAKU</option>
-            <option value="false">从LP</option>
-          </select>
-          <select name="level" id="level">
-            <option value="0">low</option>
-            <option value="1">med</option>
-            <option value="2">high</option>
-            <option value="3">extra</option>
-          </select>
-        </div>
-        <div className="top-space">
-          <button onClick={getByOld}>GetOld</button>
-          <select name="lpAddress" id="lpAddress">
-            <option value="0x943b9b4718826ea7023f79c66e0d40bebbcde22f">LP Old</option>
-            <option value="0x41279398385c7543eaC6d3471650D5a404c904A9">LP New</option>
-          </select>
-        </div>
-      </main>
-      <div className="viewport" />
-      <div className="viewport-params viewport-params-size">
-        {`width: ${viewportSize.width} x height: ${viewportSize.height}`}
-      </div>
-      <div className="viewport-params viewport-params-expand">
-        {`Is Expanded: ${isExpanded}`}
-      </div>
-    </>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Card>
+            <Space>
+              <Button 
+                type="primary" 
+                icon={<ApiOutlined />} 
+                onClick={testNet} 
+                loading={loading}
+              >
+                Test Network
+              </Button>
+              <Badge 
+                status={fakuStatus === 0 ? "success" : "processing"} 
+                text={fakuStatus === 0 ? "Idle" : "Running"} 
+              />
+            </Space>
+          </Card>
+
+          <Card title="Faku Operations">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Space wrap>
+                <Input
+                  value={num}
+                  onChange={(e) => setNum(e.target.value)}
+                  type="number"
+                  min={1}
+                  max={4}
+                  style={{ width: 100 }}
+                  placeholder="Number"
+                />
+                <Select 
+                  value={isLp}
+                  onChange={(value: string) => setIsLp(value)}
+                  style={{ width: 120 }}
+                >
+                  <Select.Option value="true">从FAKU</Select.Option>
+                  <Select.Option value="false">从LP</Select.Option>
+                </Select>
+                <Select 
+                  value={level}
+                  onChange={(value: string) => setLevel(value)}
+                  style={{ width: 120 }}
+                >
+                  <Select.Option value="0">low</Select.Option>
+                  <Select.Option value="1">med</Select.Option>
+                  <Select.Option value="2">high</Select.Option>
+                  <Select.Option value="3">extra</Select.Option>
+                </Select>
+              </Space>
+              <Button 
+                type="primary"
+                icon={<RocketOutlined />}
+                onClick={fakuOne}
+                loading={loading}
+              >
+                Faku Once
+              </Button>
+            </Space>
+          </Card>
+
+          <Card title="Get Old">
+            <Space>
+              <Select 
+                id="lpAddress"
+                style={{ width: 200 }}
+                onChange={(value: string) => setLpAddress(value)}
+              >
+                <Select.Option value="0x943b9b4718826ea7023f79c66e0d40bebbcde22f">
+                  LP Old
+                </Select.Option>
+                <Select.Option value="0x41279398385c7543eaC6d3471650D5a404c904A9">
+                  LP New
+                </Select.Option>
+              </Select>
+              <Button 
+                type="primary"
+                onClick={getByOld}
+                loading={loading}
+              >
+                Get Old
+              </Button>
+            </Space>
+          </Card>
+        </Space>
+      </StyledContent>
+    </StyledLayout>
   );
 }
 

@@ -12,9 +12,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.6.0",
+    "@types/styled-components": "^5.1.34",
+    "antd": "^5.23.3",
     "axios": "^1.6.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "styled-components": "^6.1.14"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
@@ -22,4 +26,4 @@
     "@vitejs/plugin-react": "^4.0.3",
     "vite": "^4.4.5"
   }
-} 
+}

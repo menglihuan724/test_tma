@@ -63,4 +63,24 @@ a {
 
 .top-space {
   margin-top: 10px;
+}
+
+/* 暗色主题适配 */
+[data-theme='dark'] .ant-card {
+  background: var(--tg-theme-secondary-bg-color, #1f1f1f);
+}
+
+[data-theme='dark'] .ant-typography {
+  color: var(--tg-theme-text-color, #fff);
+}
+
+/* 响应式调整 */
+@media (max-width: 576px) {
+  .ant-space {
+    gap: 8px !important;
+  }
+  
+  .ant-card {
+    border-radius: 8px;
+  }
 } 
