@@ -83,4 +83,13 @@ a {
   .ant-card {
     border-radius: 8px;
   }
+}
+
+.ant-typography-ellipsis {
+  display: inline-block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 } 

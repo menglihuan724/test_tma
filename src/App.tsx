@@ -4,6 +4,7 @@ import { Layout, Card, Button, Input, Select, Space, Typography, Badge, message 
 import { ReloadOutlined, ApiOutlined, RocketOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import './index.css';
+import { OKXClient } from './services/okxClient';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -46,6 +47,15 @@ const LP_OPTIONS = import.meta.env.VITE_LP_OPTIONS
   ? JSON.parse(import.meta.env.VITE_LP_OPTIONS)
   : [];
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+const OK_DEX_API_KEY = import.meta.env.VITE_OK_DEX_API_KEY;
+const OK_DEX_SECRET = import.meta.env.VITE_OK_DEX_SECRET;
+const OK_DEX_PASS = import.meta.env.VITE_OK_DEX_PASS;
+const OK_DEX_ID = import.meta.env.VITE_OK_DEX_ID;
+const OK_URL = import.meta.env.VITE_OK_URL;
+console.log(import.meta.env.VITE_WALLETS)
+const WALLETS = import.meta.env.VITE_WALLETS 
+  ? JSON.parse(import.meta.env.VITE_WALLETS)
+  : [];
 
 function App() {
   const [fakuStatus, setFakuStatus] = useState(0);
@@ -56,6 +66,7 @@ function App() {
   const [num, setNum] = useState<string>('');
   const [isLp, setIsLp] = useState<string>('true');
   const [level, setLevel] = useState<string>('0');
+  const [walletBalances, setWalletBalances] = useState<{address: string; chain: string; balance: number}[]>([]);
 
   useEffect(() => {
     // Init TWA
@@ -87,6 +98,38 @@ function App() {
 
     return () => clearInterval(interval);
   }, [fakuStatus]);
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      try {
+        const client = new OKXClient(
+          OK_DEX_API_KEY,
+          OK_DEX_SECRET,
+          OK_DEX_PASS,
+          OK_URL,
+          OK_DEX_ID
+        );
+        
+        const balances = await Promise.all(
+          WALLETS.map(async (wallet: any) => {
+            const balance = await client.queryTotalValue(wallet.address, wallet.chains);
+            return {
+              address: wallet.address,
+              chain: wallet.chains,
+              balance: balance
+            };
+          })
+        );
+        
+        setWalletBalances(balances);
+      } catch (error) {
+        message.error('Failed to fetch balances');
+        console.error(error);
+      }
+    };
+
+    fetchBalances();
+  }, []);
 
   const testNet = async () => {
     try {
@@ -236,6 +279,22 @@ function App() {
               >
                 Get Old
               </Button>
+            </Space>
+          </Card>
+
+          <Card title="Wallet Balances">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {walletBalances.map((wallet, index) => (
+                <div key={index} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography.Text ellipsis style={{ maxWidth: '200px' }}>
+                    {wallet.address}
+                  </Typography.Text>
+                  <Typography.Text strong>
+                    {wallet.balance.toFixed(4)} (Chain: {wallet.chain})
+                  </Typography.Text>
+                </div>
+              ))}
+              {walletBalances.length === 0 && <Typography.Text>Loading balances...</Typography.Text>}
             </Space>
           </Card>
         </Space>
