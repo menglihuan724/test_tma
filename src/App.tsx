@@ -67,6 +67,7 @@ function App() {
   const [isLp, setIsLp] = useState<string>('true');
   const [level, setLevel] = useState<string>('0');
   const [walletBalances, setWalletBalances] = useState<{address: string; chain: string; balance: number}[]>([]);
+  const [totalBalance, setTotalBalance] = useState(0);
 
   useEffect(() => {
     // Init TWA
@@ -122,6 +123,25 @@ function App() {
         );
         
         setWalletBalances(balances);
+
+        // 为每个钱包设置定时器
+        balances.forEach((wallet) => {
+          const interval = setInterval(async () => {
+            const balance = await client.queryTotalValue(wallet.address, wallet.chain);
+            setWalletBalances((prevBalances) => prevBalances.map((prevWallet) => {
+              if (prevWallet.address === wallet.address && prevWallet.chain === wallet.chain) {
+                return {
+                  ...prevWallet,
+                  balance: balance
+                };
+              }
+              return prevWallet;
+            }));
+          }, 10000); // 10秒
+
+          // 清除定时器
+          return () => clearInterval(interval);
+        });
       } catch (error) {
         message.error('Failed to fetch balances');
         console.error(error);
@@ -130,6 +150,12 @@ function App() {
 
     fetchBalances();
   }, []);
+
+  useEffect(() => {
+    // 计算总余额
+    const total = walletBalances.reduce((acc, wallet) => acc + wallet.balance, 0);
+    setTotalBalance(total);
+  }, [walletBalances]);
 
   const testNet = async () => {
     try {
@@ -294,7 +320,9 @@ function App() {
                   </Typography.Text>
                 </div>
               ))}
-              {walletBalances.length === 0 && <Typography.Text>Loading balances...</Typography.Text>}
+              <Typography.Text strong>
+                Total Balance: {totalBalance.toFixed(4)}
+              </Typography.Text>
             </Space>
           </Card>
         </Space>
