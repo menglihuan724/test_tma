@@ -65,12 +65,15 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
-  const [lpAddress, setLpAddress] = useState<string>('');
-  const [num, setNum] = useState<string>('');
+  const [lpAddress, setLpAddress] = useState<string>(
+    LP_OPTIONS[0].value || ''
+  );
+  const [num, setNum] = useState<string>('1');
   const [isLp, setIsLp] = useState<string>('true');
   const [level, setLevel] = useState<string>('0');
   const [walletBalances, setWalletBalances] = useState<{address: string; chain: string; balance: number}[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
+  const [getOldNum, setGetOldNum] = useState<string>('2');
 
   useEffect(() => {
     const checkLogin = () => {
@@ -215,7 +218,7 @@ function App() {
       const statusRes = await axios.get(`${BASE_URL}/getFakuStatus`);
       if (statusRes.data === 0 && fakuStatus === 0) {
         const response = await axios.post(
-          `${BASE_URL}/fakuGetOld?lp=${lpAddress}`
+          `${BASE_URL}/fakuGetOld?lp=${lpAddress}&num=${getOldNum}`
         );
         message.success(response.data === 0 ? "success" : "failed");
         setFakuStatus(response.data === 0 ? 1 : 0);
@@ -311,6 +314,7 @@ function App() {
                 id="lpAddress"
                 style={{ width: 200 }}
                 onChange={(value: string) => setLpAddress(value)}
+                value={lpAddress}
               >
                 {LP_OPTIONS.map(option => (
                   <Select.Option key={option.value} value={option.value}>
@@ -318,6 +322,15 @@ function App() {
                   </Select.Option>
                 ))}
               </Select>
+              <Input
+                value={getOldNum}
+                onChange={(e) => setGetOldNum(e.target.value)}
+                type="number"
+                min={1}
+                max={4}
+                style={{ width: 100 }}
+                placeholder="Number"
+              />
               <Button 
                 type="primary"
                 onClick={getByOld}
