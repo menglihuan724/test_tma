@@ -5,6 +5,7 @@ import { ReloadOutlined, ApiOutlined, RocketOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import './index.css';
 import { OKXClient } from './services/okxClient';
+import { useNavigate } from 'react-router-dom';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -58,6 +59,8 @@ const WALLETS = import.meta.env.VITE_WALLETS
   : [];
 
 function App() {
+  const history = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [fakuStatus, setFakuStatus] = useState(0);
   const [loading, setLoading] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -68,6 +71,19 @@ function App() {
   const [level, setLevel] = useState<string>('0');
   const [walletBalances, setWalletBalances] = useState<{address: string; chain: string; balance: number}[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
+
+  useEffect(() => {
+    const checkLogin = () => {
+      const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      if (!loggedIn) {
+        history('/login');
+      } else {
+        setIsLoggedIn(true);
+      }
+    };
+
+    checkLogin();
+  }, [history]);
 
   useEffect(() => {
     // Init TWA
@@ -137,7 +153,7 @@ function App() {
               }
               return prevWallet;
             }));
-          }, 10000); // 10秒
+          }, 15000); // 20秒
 
           // 清除定时器
           return () => clearInterval(interval);
@@ -211,6 +227,10 @@ function App() {
       console.error(error);
     }
   };
+
+  if (!isLoggedIn) {
+    return null; // 或者显示加载状态
+  }
 
   return (
     <StyledLayout>
