@@ -74,6 +74,7 @@ function App() {
   const [walletBalances, setWalletBalances] = useState<{address: string; chain: string; balance: number}[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
   const [getOldNum, setGetOldNum] = useState<string>('2');
+  const [aiStatus, setAiStatus] = useState<number>(0); // 0: stopped, 1: running
 
   useEffect(() => {
     const checkLogin = () => {
@@ -176,6 +177,17 @@ function App() {
     setTotalBalance(total);
   }, [walletBalances]);
 
+  useEffect(() => {
+    let interval;
+    setTimeout(() => {
+      interval = setInterval(async () => {
+        const status:number = await getAiStatus();
+        setAiStatus(status);
+    }, 24000);
+    }, 1000)
+    return () => clearInterval(interval);
+  }, [aiStatus]);
+
   const testNet = async () => {
     try {
       setLoading(true);
@@ -231,6 +243,25 @@ function App() {
     }
   };
 
+  const toggleAiJob = async () => {
+    try {
+      setLoading(true);
+      const endpoint = aiStatus === 1 ? 'stopAiJob' : 'startAiJob';
+      const response = await axios.post(`${BASE_URL}/${endpoint}`);
+      message.success(response.data === 0 ? "Operation successful" : "Operation failed");
+      setAiStatus(response.data === 0 ? (aiStatus === 1 ? 0 : 1) : aiStatus);
+    } catch (error) {
+      message.error('Operation failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAiStatus = async () => {
+    const res = await axios.get(`${BASE_URL}/getAiStatus`);
+    return res.data
+  };
+
   if (!isLoggedIn) {
     return null; // 或者显示加载状态
   }
@@ -259,13 +290,23 @@ function App() {
               >
                 Test Network
               </Button>
+            </Space>
+          </Card>
+          <Card title="Ai Job Operations">
+            <Space>
+              <Button 
+                type="primary" 
+                onClick={toggleAiJob} 
+                loading={loading}
+              >
+                {aiStatus === 1 ? "Stop Ai Job" : "Start Ai Job"}
+              </Button>
               <Badge 
-                status={fakuStatus === 0 ? "success" : "processing"} 
-                text={fakuStatus === 0 ? "Idle" : "Running"} 
+                status={aiStatus === 0 ? "default" : "processing"} 
+                text={aiStatus === 0 ? "Stopped" : "Running"} 
               />
             </Space>
           </Card>
-
           <Card title="Faku Operations">
             <Space direction="vertical" style={{ width: '100%' }}>
               <Space wrap>
@@ -305,6 +346,10 @@ function App() {
               >
                 Faku Once
               </Button>
+              <Badge 
+                status={fakuStatus === 0 ? "success" : "processing"} 
+                text={fakuStatus === 0 ? "Idle" : "Running"} 
+              />
             </Space>
           </Card>
 
