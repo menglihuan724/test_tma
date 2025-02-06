@@ -1,11 +1,10 @@
 import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+import env from '../config/env';
 
 const fakuClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: env.VITE_BASE_URL,
   headers: {
-    "Authorization": `Basic ${btoa(`${import.meta.env.VITE_AUTH_USER}:${import.meta.env.VITE_AUTH_TOKEN}`)}`,
+    Authorization: `Basic ${btoa(`${env.VITE_AUTH_USER}:${env.VITE_AUTH_TOKEN}`)}`,
     // 'Content-Type': 'application/json',
   },
 });

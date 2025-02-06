@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import CryptoJS from "crypto-js";
+import env from '../config/env';
 
 const totalPath = "/api/v5/wallet/asset/total-value-by-address";
 const tradePath = "/api/v5/wallet/post-transaction/transactions-by-address";
@@ -13,7 +14,7 @@ interface BalanceParams {
 
 export class OKXClient {
   private apiKey: string;
-  private secretKey: string;
+  private secret: string;
   private passphrase: string;
   private baseUrl:string;
   private projectId:string;
@@ -21,13 +22,13 @@ export class OKXClient {
 
   constructor(
     apiKey: string,
-    secretKey: string,
+    secret: string,
     passphrase: string,
     baseUrl: string,
     projectId:string
   ) {
     this.apiKey = apiKey;
-    this.secretKey = secretKey;
+    this.secret = secret;
     this.passphrase = passphrase;
     this.baseUrl = baseUrl;
     this.projectId=projectId
@@ -48,7 +49,7 @@ export class OKXClient {
   }
 
   private sign(message) {
-    return CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(message, this.secretKey))
+    return CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(message, this.secret))
     // return CryptoJS.HmacSHA256(message, this.secretKey).toString(
     //   CryptoJS.enc.Base64
     // );
@@ -77,7 +78,7 @@ export class OKXClient {
         "OK-ACCESS-TIMESTAMP": timestamp,
         "OK-ACCESS-PASSPHRASE": this.passphrase,
         "OK-ACCESS-PROJECT": this.projectId,
-        "Authorization": `Basic ${btoa(`${import.meta.env.VITE_AUTH_USER}:${import.meta.env.VITE_AUTH_TOKEN}`)}`
+        "Authorization": `Basic ${btoa(`${env.VITE_AUTH_USER}:${env.VITE_AUTH_TOKEN}`)}`
       };
 
       this.httpClient

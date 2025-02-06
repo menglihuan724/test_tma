@@ -25,6 +25,7 @@ import {
   stopAiJob,
   getAiStatus,
 } from "./services/fakuClient";
+import env from './config/env';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -63,19 +64,14 @@ declare global {
   }
 }
 // 使用 import.meta.env 访问环境变量
-const LP_OPTIONS = import.meta.env.VITE_LP_OPTIONS
-  ? JSON.parse(import.meta.env.VITE_LP_OPTIONS)
-  : [];
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-const OK_DEX_API_KEY = import.meta.env.VITE_OK_DEX_API_KEY;
-const OK_DEX_SECRET = import.meta.env.VITE_OK_DEX_SECRET;
-const OK_DEX_PASS = import.meta.env.VITE_OK_DEX_PASS;
-const OK_DEX_ID = import.meta.env.VITE_OK_DEX_ID;
-const OK_URL = import.meta.env.VITE_OK_URL;
-console.log(import.meta.env.VITE_WALLETS);
-const WALLETS = import.meta.env.VITE_WALLETS
-  ? JSON.parse(import.meta.env.VITE_WALLETS)
-  : [];
+const LP_OPTIONS = env.VITE_LP_OPTIONS;
+const BASE_URL = env.VITE_BASE_URL;
+const OK_DEX_API_KEY = env.VITE_OK_DEX_API_KEY;
+const OK_DEX_SECRET = env.VITE_OK_DEX_SECRET;
+const OK_DEX_PASS = env.VITE_OK_DEX_PASS;
+const OK_DEX_ID = env.VITE_OK_DEX_ID;
+const OK_URL = env.VITE_OK_URL;
+const WALLETS = env.VITE_WALLETS;
 
 function App() {
   const history = useNavigate();
