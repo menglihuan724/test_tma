@@ -1,12 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { Layout, Card, Button, Input, Select, Space, Typography, Badge, message } from 'antd';
-import { ReloadOutlined, ApiOutlined, RocketOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-import './index.css';
-import { OKXClient } from './services/okxClient';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import {
+  Layout,
+  Card,
+  Button,
+  Input,
+  Select,
+  Space,
+  Typography,
+  Badge,
+  message,
+} from "antd";
+import { ReloadOutlined, ApiOutlined, RocketOutlined } from "@ant-design/icons";
+import styled from "styled-components";
+import "./index.css";
+import { OKXClient } from "./services/okxClient";
+import { useNavigate } from "react-router-dom";
 // import { getSuiBalance, getSuiTokenBalances, getSuiBalanceAtTime, getSuiTokenBalancesAtTime } from './services/suiClient';
-import { testNet, fakuOnce, getFakuStatus, fakuGetOld, startAiJob, stopAiJob, getAiStatus } from './services/fakuClient';
+import {
+  testNet,
+  fakuOnce,
+  getFakuStatus,
+  fakuGetOld,
+  startAiJob,
+  stopAiJob,
+  getAiStatus,
+} from "./services/fakuClient";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -34,7 +52,7 @@ const LogoWrapper = styled.div`
   margin-bottom: 24px;
   img {
     border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -45,7 +63,7 @@ declare global {
   }
 }
 // 使用 import.meta.env 访问环境变量
-const LP_OPTIONS = import.meta.env.VITE_LP_OPTIONS 
+const LP_OPTIONS = import.meta.env.VITE_LP_OPTIONS
   ? JSON.parse(import.meta.env.VITE_LP_OPTIONS)
   : [];
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -54,8 +72,8 @@ const OK_DEX_SECRET = import.meta.env.VITE_OK_DEX_SECRET;
 const OK_DEX_PASS = import.meta.env.VITE_OK_DEX_PASS;
 const OK_DEX_ID = import.meta.env.VITE_OK_DEX_ID;
 const OK_URL = import.meta.env.VITE_OK_URL;
-console.log(import.meta.env.VITE_WALLETS)
-const WALLETS = import.meta.env.VITE_WALLETS 
+console.log(import.meta.env.VITE_WALLETS);
+const WALLETS = import.meta.env.VITE_WALLETS
   ? JSON.parse(import.meta.env.VITE_WALLETS)
   : [];
 
@@ -66,28 +84,30 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
-  const [lpAddress, setLpAddress] = useState<string>(
-    LP_OPTIONS[0].value || ''
-  );
-  const [num, setNum] = useState<string>('1');
-  const [isLp, setIsLp] = useState<string>('true');
-  const [level, setLevel] = useState<string>('0');
-  const [walletBalances, setWalletBalances] = useState<{address: string; chain: string; balance: number}[]>([]);
+  const [lpAddress, setLpAddress] = useState<string>(LP_OPTIONS[0].value || "");
+  const [num, setNum] = useState<string>("1");
+  const [isLp, setIsLp] = useState<string>("true");
+  const [level, setLevel] = useState<string>("0");
+  const [walletBalances, setWalletBalances] = useState<
+    { address: string; chain: string; balance: number }[]
+  >([]);
   const [totalBalance, setTotalBalance] = useState(0);
-  const [getOldNum, setGetOldNum] = useState<string>('2');
+  const [getOldNum, setGetOldNum] = useState<string>("2");
   const [aiStatus, setAiStatus] = useState<number>(0); // 0: stopped, 1: running
-  const [suiAddress, setSuiAddress] = useState<string>('');
+  const [suiAddress, setSuiAddress] = useState<string>("");
   const [suiBalance, setSuiBalance] = useState<any>(null);
   const [suiTokenBalances, setSuiTokenBalances] = useState<any[]>([]);
   const [historicalTimestamp, setHistoricalTimestamp] = useState<number>(0);
   const [historicalSuiBalance, setHistoricalSuiBalance] = useState<any>(null);
-  const [historicalSuiTokenBalances, setHistoricalSuiTokenBalances] = useState<any[]>([]);
+  const [historicalSuiTokenBalances, setHistoricalSuiTokenBalances] = useState<
+    any[]
+  >([]);
 
   useEffect(() => {
     const checkLogin = () => {
-      const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       if (!loggedIn) {
-        history('/login');
+        history("/login");
       } else {
         setIsLoggedIn(true);
       }
@@ -137,40 +157,51 @@ function App() {
           OK_URL,
           OK_DEX_ID
         );
-        
+
         const balances = await Promise.all(
           WALLETS.map(async (wallet: any) => {
-            const balance = await client.queryTotalValue(wallet.address, wallet.chains);
+            const balance = await client.queryTotalValue(
+              wallet.address,
+              wallet.chains
+            );
             return {
               address: wallet.address,
               chain: wallet.chains,
-              balance: balance
+              balance: balance,
             };
           })
         );
-        
+
         setWalletBalances(balances);
 
         // 为每个钱包设置定时器
         balances.forEach((wallet) => {
           const interval = setInterval(async () => {
-            const balance = await client.queryTotalValue(wallet.address, wallet.chain);
-            setWalletBalances((prevBalances) => prevBalances.map((prevWallet) => {
-              if (prevWallet.address === wallet.address && prevWallet.chain === wallet.chain) {
-                return {
-                  ...prevWallet,
-                  balance: balance
-                };
-              }
-              return prevWallet;
-            }));
+            const balance = await client.queryTotalValue(
+              wallet.address,
+              wallet.chain
+            );
+            setWalletBalances((prevBalances) =>
+              prevBalances.map((prevWallet) => {
+                if (
+                  prevWallet.address === wallet.address &&
+                  prevWallet.chain === wallet.chain
+                ) {
+                  return {
+                    ...prevWallet,
+                    balance: balance,
+                  };
+                }
+                return prevWallet;
+              })
+            );
           }, 15000); // 20秒
 
           // 清除定时器
           return () => clearInterval(interval);
         });
       } catch (error) {
-        message.error('Failed to fetch balances');
+        message.error("Failed to fetch balances");
         console.error(error);
       }
     };
@@ -180,20 +211,30 @@ function App() {
 
   useEffect(() => {
     // 计算总余额
-    const total = walletBalances.reduce((acc, wallet) => acc + wallet.balance, 0);
+    const total = walletBalances.reduce(
+      (acc, wallet) => acc + wallet.balance,
+      0
+    );
     setTotalBalance(total);
   }, [walletBalances]);
 
   useEffect(() => {
-    let interval;
-    setTimeout(() => {
-      interval = setInterval(async () => {
-        const status:number = await getAiStatus();
-        setAiStatus(status);
-    }, 24000);
-    }, 1000)
+    let interval: NodeJS.Timeout;
+
+    // 立即执行一次
+    const fetchAiStatus = async () => {
+      const status: number = await getAiStatus();
+      setAiStatus(status);
+    };
+
+    fetchAiStatus();
+
+    // 设置定时器，每24秒执行一次
+    interval = setInterval(fetchAiStatus, 24000);
+
+    // 清除定时器
     return () => clearInterval(interval);
-  }, [aiStatus]);
+  }, []);
 
   const testNet = async () => {
     try {
@@ -201,7 +242,7 @@ function App() {
       const result = await testNet();
       message.success(result);
     } catch (error) {
-      message.error('Network test failed');
+      message.error("Network test failed");
     } finally {
       setLoading(false);
     }
@@ -213,13 +254,15 @@ function App() {
       const statusRes = await getFakuStatus();
       if (statusRes === 0 && fakuStatus === 0) {
         const response = await fakuOnce(num, isLp, level);
-        message.success(response === 0 ? "Operation successful" : "Operation failed");
+        message.success(
+          response === 0 ? "Operation successful" : "Operation failed"
+        );
         setFakuStatus(response === 0 ? 1 : 0);
       } else {
         message.warning("Faku is running");
       }
     } catch (error) {
-      message.error('Operation failed');
+      message.error("Operation failed");
     } finally {
       setLoading(false);
     }
@@ -236,7 +279,7 @@ function App() {
         message.warning("faku is running");
       }
     } catch (error) {
-      message.error('Operation failed');
+      message.error("Operation failed");
       console.error(error);
     }
   };
@@ -246,10 +289,12 @@ function App() {
       setLoading(true);
       const endpoint = aiStatus === 1 ? stopAiJob : startAiJob;
       const response = await endpoint();
-      message.success(response === 0 ? "Operation successful" : "Operation failed");
+      message.success(
+        response === 0 ? "Operation successful" : "Operation failed"
+      );
       setAiStatus(response === 0 ? (aiStatus === 1 ? 0 : 1) : aiStatus);
     } catch (error) {
-      message.error('Operation failed');
+      message.error("Operation failed");
     } finally {
       setLoading(false);
     }
@@ -262,19 +307,23 @@ function App() {
       setSuiBalance(balance);
       setSuiTokenBalances(tokenBalances);
     } catch (error) {
-      message.error('Failed to fetch Sui balances');
+      message.error("Failed to fetch Sui balances");
     }
   };
 
   const handleHistoricalSuiQuery = async () => {
     try {
-      const timestamp = Math.floor(Date.now() / 1000) - historicalTimestamp * 3600; // 转换为秒
+      const timestamp =
+        Math.floor(Date.now() / 1000) - historicalTimestamp * 3600; // 转换为秒
       const balance = await getSuiBalanceAtTime(suiAddress, timestamp);
-      const tokenBalances = await getSuiTokenBalancesAtTime(suiAddress, timestamp);
+      const tokenBalances = await getSuiTokenBalancesAtTime(
+        suiAddress,
+        timestamp
+      );
       setHistoricalSuiBalance(balance);
       setHistoricalSuiTokenBalances(tokenBalances);
     } catch (error) {
-      message.error('Failed to fetch historical Sui balances');
+      message.error("Failed to fetch historical Sui balances");
     }
   };
 
@@ -285,23 +334,26 @@ function App() {
   return (
     <StyledLayout>
       <StyledHeader>
-        <Title level={4} style={{ margin: 0, color: 'var(--tg-theme-text-color)' }}>
+        <Title
+          level={4}
+          style={{ margin: 0, color: "var(--tg-theme-text-color)" }}
+        >
           Faku Web
         </Title>
       </StyledHeader>
-      
+
       <StyledContent>
         <LogoWrapper>
           <img width="64" src="./assets/logo.jpeg" alt="logo of faku" />
         </LogoWrapper>
 
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Card>
             <Space>
-              <Button 
-                type="primary" 
-                icon={<ApiOutlined />} 
-                onClick={testNet} 
+              <Button
+                type="primary"
+                icon={<ApiOutlined />}
+                onClick={testNet}
                 loading={loading}
               >
                 Test Network
@@ -310,21 +362,17 @@ function App() {
           </Card>
           <Card title="Ai Job Operations">
             <Space>
-              <Button 
-                type="primary" 
-                onClick={toggleAiJob} 
-                loading={loading}
-              >
+              <Button type="primary" onClick={toggleAiJob} loading={loading}>
                 {aiStatus === 1 ? "Stop Ai Job" : "Start Ai Job"}
               </Button>
-              <Badge 
-                status={aiStatus === 0 ? "default" : "processing"} 
-                text={aiStatus === 0 ? "Stopped" : "Running"} 
+              <Badge
+                status={aiStatus === 0 ? "default" : "processing"}
+                text={aiStatus === 0 ? "Stopped" : "Running"}
               />
             </Space>
           </Card>
           <Card title="Faku Operations">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               <Space wrap>
                 <Input
                   value={num}
@@ -335,7 +383,7 @@ function App() {
                   style={{ width: 100 }}
                   placeholder="Number"
                 />
-                <Select 
+                <Select
                   value={isLp}
                   onChange={(value: string) => setIsLp(value)}
                   style={{ width: 120 }}
@@ -343,7 +391,7 @@ function App() {
                   <Select.Option value="true">从FAKU</Select.Option>
                   <Select.Option value="false">从LP</Select.Option>
                 </Select>
-                <Select 
+                <Select
                   value={level}
                   onChange={(value: string) => setLevel(value)}
                   style={{ width: 120 }}
@@ -354,7 +402,7 @@ function App() {
                   <Select.Option value="3">extra</Select.Option>
                 </Select>
               </Space>
-              <Button 
+              <Button
                 type="primary"
                 icon={<RocketOutlined />}
                 onClick={fakuOne}
@@ -362,22 +410,22 @@ function App() {
               >
                 Faku Once
               </Button>
-              <Badge 
-                status={fakuStatus === 0 ? "success" : "processing"} 
-                text={fakuStatus === 0 ? "Idle" : "Running"} 
+              <Badge
+                status={fakuStatus === 0 ? "success" : "processing"}
+                text={fakuStatus === 0 ? "Idle" : "Running"}
               />
             </Space>
           </Card>
 
           <Card title="Get Old">
             <Space>
-              <Select 
+              <Select
                 id="lpAddress"
                 style={{ width: 200 }}
                 onChange={(value: string) => setLpAddress(value)}
                 value={lpAddress}
               >
-                {LP_OPTIONS.map(option => (
+                {LP_OPTIONS.map((option) => (
                   <Select.Option key={option.value} value={option.value}>
                     {option.name}
                   </Select.Option>
@@ -392,21 +440,20 @@ function App() {
                 style={{ width: 100 }}
                 placeholder="Number"
               />
-              <Button 
-                type="primary"
-                onClick={getByOld}
-                loading={loading}
-              >
+              <Button type="primary" onClick={getByOld} loading={loading}>
                 Get Old
               </Button>
             </Space>
           </Card>
 
           <Card title="Wallet Balances">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               {walletBalances.map((wallet, index) => (
-                <div key={index} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography.Text ellipsis style={{ maxWidth: '200px' }}>
+                <div
+                  key={index}
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography.Text ellipsis style={{ maxWidth: "200px" }}>
                     {wallet.address}
                   </Typography.Text>
                   <Typography.Text strong>
@@ -512,4 +559,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
