@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Layout, Card, Button, Input, Select, Space, Typography, Badge, message } from 'antd';
 import { ReloadOutlined, ApiOutlined, RocketOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import './index.css';
 import { OKXClient } from './services/okxClient';
 import { useNavigate } from 'react-router-dom';
+// import { getSuiBalance, getSuiTokenBalances, getSuiBalanceAtTime, getSuiTokenBalancesAtTime } from './services/suiClient';
+import { testNet, fakuOnce, getFakuStatus, fakuGetOld, startAiJob, stopAiJob, getAiStatus } from './services/fakuClient';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -75,6 +76,12 @@ function App() {
   const [totalBalance, setTotalBalance] = useState(0);
   const [getOldNum, setGetOldNum] = useState<string>('2');
   const [aiStatus, setAiStatus] = useState<number>(0); // 0: stopped, 1: running
+  const [suiAddress, setSuiAddress] = useState<string>('');
+  const [suiBalance, setSuiBalance] = useState<any>(null);
+  const [suiTokenBalances, setSuiTokenBalances] = useState<any[]>([]);
+  const [historicalTimestamp, setHistoricalTimestamp] = useState<number>(0);
+  const [historicalSuiBalance, setHistoricalSuiBalance] = useState<any>(null);
+  const [historicalSuiTokenBalances, setHistoricalSuiTokenBalances] = useState<any[]>([]);
 
   useEffect(() => {
     const checkLogin = () => {
@@ -191,8 +198,8 @@ function App() {
   const testNet = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/startBot`);
-      message.success(response.data);
+      const result = await testNet();
+      message.success(result);
     } catch (error) {
       message.error('Network test failed');
     } finally {
@@ -203,13 +210,11 @@ function App() {
   const fakuOne = async () => {
     try {
       setLoading(true);
-      const statusRes = await axios.get(`${BASE_URL}/getFakuStatus`);
-      if (statusRes.data === 0 && fakuStatus === 0) {
-        const response = await axios.post(
-          `${BASE_URL}/fakuOnce/${num}/${isLp}/${level}`
-        );
-        message.success(response.data === 0 ? "Operation successful" : "Operation failed");
-        setFakuStatus(response.data === 0 ? 1 : 0);
+      const statusRes = await getFakuStatus();
+      if (statusRes === 0 && fakuStatus === 0) {
+        const response = await fakuOnce(num, isLp, level);
+        message.success(response === 0 ? "Operation successful" : "Operation failed");
+        setFakuStatus(response === 0 ? 1 : 0);
       } else {
         message.warning("Faku is running");
       }
@@ -220,20 +225,13 @@ function App() {
     }
   };
 
-  const getFakuStatus = async () => {
-    const res = await axios.get(`${BASE_URL}/getFakuStatus`);
-    return res.data;
-  };
-
   const getByOld = async () => {
     try {
-      const statusRes = await axios.get(`${BASE_URL}/getFakuStatus`);
-      if (statusRes.data === 0 && fakuStatus === 0) {
-        const response = await axios.post(
-          `${BASE_URL}/fakuGetOld?lp=${lpAddress}&num=${getOldNum}`
-        );
-        message.success(response.data === 0 ? "success" : "failed");
-        setFakuStatus(response.data === 0 ? 1 : 0);
+      const statusRes = await getFakuStatus();
+      if (statusRes === 0 && fakuStatus === 0) {
+        const response = await fakuGetOld(lpAddress, getOldNum);
+        message.success(response === 0 ? "success" : "failed");
+        setFakuStatus(response === 0 ? 1 : 0);
       } else {
         message.warning("faku is running");
       }
@@ -246,10 +244,10 @@ function App() {
   const toggleAiJob = async () => {
     try {
       setLoading(true);
-      const endpoint = aiStatus === 1 ? 'stopAiJob' : 'startAiJob';
-      const response = await axios.post(`${BASE_URL}/${endpoint}`);
-      message.success(response.data === 0 ? "Operation successful" : "Operation failed");
-      setAiStatus(response.data === 0 ? (aiStatus === 1 ? 0 : 1) : aiStatus);
+      const endpoint = aiStatus === 1 ? stopAiJob : startAiJob;
+      const response = await endpoint();
+      message.success(response === 0 ? "Operation successful" : "Operation failed");
+      setAiStatus(response === 0 ? (aiStatus === 1 ? 0 : 1) : aiStatus);
     } catch (error) {
       message.error('Operation failed');
     } finally {
@@ -257,9 +255,27 @@ function App() {
     }
   };
 
-  const getAiStatus = async () => {
-    const res = await axios.get(`${BASE_URL}/getAiStatus`);
-    return res.data
+  const handleSuiQuery = async () => {
+    try {
+      const balance = await getSuiBalance(suiAddress);
+      const tokenBalances = await getSuiTokenBalances(suiAddress);
+      setSuiBalance(balance);
+      setSuiTokenBalances(tokenBalances);
+    } catch (error) {
+      message.error('Failed to fetch Sui balances');
+    }
+  };
+
+  const handleHistoricalSuiQuery = async () => {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000) - historicalTimestamp * 3600; // 转换为秒
+      const balance = await getSuiBalanceAtTime(suiAddress, timestamp);
+      const tokenBalances = await getSuiTokenBalancesAtTime(suiAddress, timestamp);
+      setHistoricalSuiBalance(balance);
+      setHistoricalSuiTokenBalances(tokenBalances);
+    } catch (error) {
+      message.error('Failed to fetch historical Sui balances');
+    }
   };
 
   if (!isLoggedIn) {
@@ -403,6 +419,93 @@ function App() {
               </Typography.Text>
             </Space>
           </Card>
+
+          {/* <Card title="Sui Balance Query">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Input
+                value={suiAddress}
+                onChange={(e) => setSuiAddress(e.target.value)}
+                placeholder="Enter Sui address"
+              />
+              <Button type="primary" onClick={handleSuiQuery}>
+                Query Sui Balances
+              </Button>
+              {suiBalance && (
+                <Typography.Text strong>
+                  Main Balance: {suiBalance.totalBalance} SUI
+                </Typography.Text>
+              )}
+              {suiTokenBalances.length > 0 && (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Typography.Text strong>Token Balances:</Typography.Text>
+                  {suiTokenBalances.map((token, index) => (
+                    <div key={index}>
+                      <Typography.Text>
+                        {token.coinType}: {token.totalBalance}
+                      </Typography.Text>
+                    </div>
+                  ))}
+                </Space>
+              )}
+              <Input
+                type="number"
+                value={historicalTimestamp}
+                onChange={(e) => setHistoricalTimestamp(Number(e.target.value))}
+                placeholder="Hours ago"
+              />
+              <Button type="primary" onClick={handleHistoricalSuiQuery}>
+                Query Historical Sui Balances
+              </Button>
+              {historicalSuiBalance && (
+                <Typography.Text strong>
+                  Historical Main Balance: {historicalSuiBalance.totalBalance} SUI
+                </Typography.Text>
+              )}
+              {historicalSuiTokenBalances.length > 0 && (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Typography.Text strong>Historical Token Balances:</Typography.Text>
+                  {historicalSuiTokenBalances.map((token, index) => (
+                    <div key={index}>
+                      <Typography.Text>
+                        {token.coinType}: {token.totalBalance}
+                      </Typography.Text>
+                    </div>
+                  ))}
+                </Space>
+              )}
+            </Space>
+          </Card>
+
+          <Card title="Historical Sui Balance Query">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Input
+                value={historicalTimestamp}
+                onChange={(e) => setHistoricalTimestamp(Number(e.target.value))}
+                type="number"
+                placeholder="Enter historical timestamp (hours ago)"
+              />
+              <Button type="primary" onClick={handleHistoricalSuiQuery}>
+                Query Historical Sui Balances
+              </Button>
+              {historicalSuiBalance && (
+                <Typography.Text strong>
+                  Historical Balance: {historicalSuiBalance.totalBalance} SUI
+                </Typography.Text>
+              )}
+              {historicalSuiTokenBalances.length > 0 && (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Typography.Text strong>Historical Token Balances:</Typography.Text>
+                  {historicalSuiTokenBalances.map((token, index) => (
+                    <div key={index}>
+                      <Typography.Text>
+                        {token.coinType}: {token.totalBalance}
+                      </Typography.Text>
+                    </div>
+                  ))}
+                </Space>
+              )}
+            </Space>
+          </Card> */}
         </Space>
       </StyledContent>
     </StyledLayout>

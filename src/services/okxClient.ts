@@ -77,6 +77,7 @@ export class OKXClient {
         "OK-ACCESS-TIMESTAMP": timestamp,
         "OK-ACCESS-PASSPHRASE": this.passphrase,
         "OK-ACCESS-PROJECT": this.projectId,
+        "Authorization": `Basic ${btoa(`${import.meta.env.VITE_AUTH_USER}:${import.meta.env.VITE_AUTH_TOKEN}`)}`
       };
 
       this.httpClient
