@@ -1,7 +1,7 @@
 export const onRequest = async (context) => {
   const { request } = context;
-  const url = new URL(request.url);
-  url.hostname ="faku.cflpool.io"
+  const url = new URL("https://www.baidu.com");
+//   url.hostname ="faku.cflpool.io"
   const newRequest = new Request(url, request);
   console.log(newRequest)
   const response = fetch(newRequest);
