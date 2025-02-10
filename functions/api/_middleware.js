@@ -3,7 +3,7 @@ export const onRequest = async (context) => {
   const url = new URL(request.url);
   url.hostname ="faku.cflpool.io"
   const newRequest = new Request(url, request);
-  console.log(`test :${newRequest}`)
+  console.log(`test :${newRequest.hostname}`)
   const response = fetch(newRequest);
   // const response = await context.next();
   // response.headers.set("Access-Control-Allow-Origin", "*");
