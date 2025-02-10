@@ -6,7 +6,7 @@ export const onRequest = async (context) => {
   console.log(`test :${newRequest}`)
   const response = fetch(newRequest);
   // const response = await context.next();
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Max-Age", "86400");
+  // response.headers.set("Access-Control-Allow-Origin", "*");
+  // response.headers.set("Access-Control-Max-Age", "86400");
   return response;
 };
