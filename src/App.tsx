@@ -9,6 +9,7 @@ import {
   Typography,
   Badge,
   message,
+  Tabs,
 } from "antd";
 import { ReloadOutlined, ApiOutlined, RocketOutlined } from "@ant-design/icons";
 import styled from "styled-components";
@@ -26,9 +27,12 @@ import {
   getAiStatus,
 } from "./services/fakuClient";
 import env from './config/env';
+import IpOperations from './components/IpOperations';
+import ConfluxWallet from './components/ConfluxWallet';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
+const { TabPane } = Tabs;
 
 const StyledLayout = styled(Layout)`
   min-height: 100vh;
@@ -343,213 +347,155 @@ function App() {
           <img width="64" src="./assets/logo.jpeg" alt="logo of faku" />
         </LogoWrapper>
 
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <Card>
-            <Space>
-              <Button
-                type="primary"
-                icon={<ApiOutlined />}
-                onClick={testNet}
-                loading={loading}
-              >
-                Test Network
-              </Button>
-            </Space>
-          </Card>
-          <Card title="Ai Job Operations">
-            <Space>
-              <Button type="primary" onClick={toggleAiJob} loading={loading}>
-                {aiStatus === 1 ? "Stop Ai Job" : "Start Ai Job"}
-              </Button>
-              <Badge
-                status={aiStatus === 0 ? "default" : "processing"}
-                text={aiStatus === 0 ? "Stopped" : "Running"}
-              />
-            </Space>
-          </Card>
-          <Card title="Faku Operations">
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Space wrap>
-                <Input
-                  value={num}
-                  onChange={(e) => setNum(e.target.value)}
-                  type="number"
-                  min={1}
-                  max={4}
-                  style={{ width: 100 }}
-                  placeholder="Number"
-                />
-                <Select
-                  value={isLp}
-                  onChange={(value: string) => setIsLp(value)}
-                  style={{ width: 120 }}
-                >
-                  <Select.Option value="true">从FAKU</Select.Option>
-                  <Select.Option value="false">从LP</Select.Option>
-                </Select>
-                <Select
-                  value={level}
-                  onChange={(value: string) => setLevel(value)}
-                  style={{ width: 120 }}
-                >
-                  <Select.Option value="0">low</Select.Option>
-                  <Select.Option value="1">med</Select.Option>
-                  <Select.Option value="2">high</Select.Option>
-                  <Select.Option value="3">extra</Select.Option>
-                </Select>
-              </Space>
-              <Button
-                type="primary"
-                icon={<RocketOutlined />}
-                onClick={fakuOne}
-                loading={loading}
-              >
-                Faku Once
-              </Button>
-              <Badge
-                status={fakuStatus === 0 ? "success" : "processing"}
-                text={fakuStatus === 0 ? "Idle" : "Running"}
-              />
-            </Space>
-          </Card>
+        <Tabs defaultActiveKey="home">
+          <TabPane tab="Home" key="home">
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <Card>
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<ApiOutlined />}
+                    onClick={testNet}
+                    loading={loading}
+                  >
+                    Test Network
+                  </Button>
+                </Space>
+              </Card>
+              <Card title="Ai Job Operations">
+                <Space>
+                  <Button type="primary" onClick={toggleAiJob} loading={loading}>
+                    {aiStatus === 1 ? "Stop Ai Job" : "Start Ai Job"}
+                  </Button>
+                  <Badge
+                    status={aiStatus === 0 ? "default" : "processing"}
+                    text={aiStatus === 0 ? "Stopped" : "Running"}
+                  />
+                </Space>
+              </Card>
+              <Card title="Faku Operations">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Space wrap>
+                    <Input
+                      value={num}
+                      onChange={(e) => setNum(e.target.value)}
+                      type="number"
+                      min={1}
+                      max={4}
+                      style={{ width: 100 }}
+                      placeholder="Number"
+                    />
+                    <Select
+                      value={isLp}
+                      onChange={(value: string) => setIsLp(value)}
+                      style={{ width: 120 }}
+                    >
+                      <Select.Option value="true">从FAKU</Select.Option>
+                      <Select.Option value="false">从LP</Select.Option>
+                    </Select>
+                    <Select
+                      value={level}
+                      onChange={(value: string) => setLevel(value)}
+                      style={{ width: 120 }}
+                    >
+                      <Select.Option value="0">low</Select.Option>
+                      <Select.Option value="1">med</Select.Option>
+                      <Select.Option value="2">high</Select.Option>
+                      <Select.Option value="3">extra</Select.Option>
+                    </Select>
+                  </Space>
+                  <Button
+                    type="primary"
+                    icon={<RocketOutlined />}
+                    onClick={fakuOne}
+                    loading={loading}
+                  >
+                    Faku Once
+                  </Button>
+                  <Badge
+                    status={fakuStatus === 0 ? "success" : "processing"}
+                    text={fakuStatus === 0 ? "Idle" : "Running"}
+                  />
+                </Space>
+              </Card>
 
-          <Card title="Get Old">
-            <Space>
-              <Select
-                id="lpAddress"
-                style={{ width: 200 }}
-                onChange={(value: string) => setLpAddress(value)}
-                value={lpAddress}
-              >
-                {LP_OPTIONS.map((option) => (
-                  <Select.Option key={option.value} value={option.value}>
-                    {option.name}
-                  </Select.Option>
-                ))}
-              </Select>
-              <Input
-                value={getOldNum}
-                onChange={(e) => setGetOldNum(e.target.value)}
-                type="number"
-                min={1}
-                max={4}
-                style={{ width: 100 }}
-                placeholder="Number"
-              />
-              <Button type="primary" onClick={getByOld} loading={loading}>
-                Get Old
-              </Button>
-            </Space>
-          </Card>
+              <Card title="Get Old">
+                <Space>
+                  <Select
+                    id="lpAddress"
+                    style={{ width: 200 }}
+                    onChange={(value: string) => setLpAddress(value)}
+                    value={lpAddress}
+                  >
+                    {LP_OPTIONS.map((option) => (
+                      <Select.Option key={option.value} value={option.value}>
+                        {option.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                  <Input
+                    value={getOldNum}
+                    onChange={(e) => setGetOldNum(e.target.value)}
+                    type="number"
+                    min={1}
+                    max={4}
+                    style={{ width: 100 }}
+                    placeholder="Number"
+                  />
+                  <Button type="primary" onClick={getByOld} loading={loading}>
+                    Get Old
+                  </Button>
+                </Space>
+              </Card>
 
-          <Card title="Wallet Balances">
-            <Space direction="vertical" style={{ width: "100%" }}>
-              {walletBalances.map((wallet, index) => (
-                <div
-                  key={index}
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography.Text ellipsis style={{ maxWidth: "200px" }}>
-                    {wallet.address}
-                  </Typography.Text>
+              <Card title="Wallet Balances">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  {walletBalances.map((wallet, index) => (
+                    <div
+                      key={index}
+                      style={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography.Text ellipsis style={{ maxWidth: "200px" }}>
+                        {wallet.address}
+                      </Typography.Text>
+                      <Typography.Text strong>
+                        {wallet.balance.toFixed(4)} (Chain: {wallet.chain})
+                      </Typography.Text>
+                    </div>
+                  ))}
                   <Typography.Text strong>
-                    {wallet.balance.toFixed(4)} (Chain: {wallet.chain})
+                    Total Balance: {totalBalance.toFixed(4)}
                   </Typography.Text>
-                </div>
-              ))}
-              <Typography.Text strong>
-                Total Balance: {totalBalance.toFixed(4)}
-              </Typography.Text>
+                </Space>
+              </Card>
             </Space>
-          </Card>
+          </TabPane>
 
-          {/* <Card title="Sui Balance Query">
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Input
-                value={suiAddress}
-                onChange={(e) => setSuiAddress(e.target.value)}
-                placeholder="Enter Sui address"
-              />
-              <Button type="primary" onClick={handleSuiQuery}>
-                Query Sui Balances
-              </Button>
-              {suiBalance && (
-                <Typography.Text strong>
-                  Main Balance: {suiBalance.totalBalance} SUI
-                </Typography.Text>
-              )}
-              {suiTokenBalances.length > 0 && (
+          <TabPane tab="CFX" key="cfx">
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <Card title="CONNECT">
+                <ConfluxWallet />
+              </Card>
+              <Card title="Interval Settings">
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Typography.Text strong>Token Balances:</Typography.Text>
-                  {suiTokenBalances.map((token, index) => (
-                    <div key={index}>
-                      <Typography.Text>
-                        {token.coinType}: {token.totalBalance}
-                      </Typography.Text>
-                    </div>
-                  ))}
+                  {/* 间隔设置相关的组件会在 ConfluxWallet 组件中渲染 */}
                 </Space>
-              )}
-              <Input
-                type="number"
-                value={historicalTimestamp}
-                onChange={(e) => setHistoricalTimestamp(Number(e.target.value))}
-                placeholder="Hours ago"
-              />
-              <Button type="primary" onClick={handleHistoricalSuiQuery}>
-                Query Historical Sui Balances
-              </Button>
-              {historicalSuiBalance && (
-                <Typography.Text strong>
-                  Historical Main Balance: {historicalSuiBalance.totalBalance} SUI
-                </Typography.Text>
-              )}
-              {historicalSuiTokenBalances.length > 0 && (
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Typography.Text strong>Historical Token Balances:</Typography.Text>
-                  {historicalSuiTokenBalances.map((token, index) => (
-                    <div key={index}>
-                      <Typography.Text>
-                        {token.coinType}: {token.totalBalance}
-                      </Typography.Text>
-                    </div>
-                  ))}
-                </Space>
-              )}
+              </Card>
             </Space>
-          </Card>
+          </TabPane>
 
-          <Card title="Historical Sui Balance Query">
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Input
-                value={historicalTimestamp}
-                onChange={(e) => setHistoricalTimestamp(Number(e.target.value))}
-                type="number"
-                placeholder="Enter historical timestamp (hours ago)"
-              />
-              <Button type="primary" onClick={handleHistoricalSuiQuery}>
-                Query Historical Sui Balances
-              </Button>
-              {historicalSuiBalance && (
-                <Typography.Text strong>
-                  Historical Balance: {historicalSuiBalance.totalBalance} SUI
-                </Typography.Text>
-              )}
-              {historicalSuiTokenBalances.length > 0 && (
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Typography.Text strong>Historical Token Balances:</Typography.Text>
-                  {historicalSuiTokenBalances.map((token, index) => (
-                    <div key={index}>
-                      <Typography.Text>
-                        {token.coinType}: {token.totalBalance}
-                      </Typography.Text>
-                    </div>
-                  ))}
-                </Space>
-              )}
+          <TabPane tab="SUI" key="sui">
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <Card title="SUI Operations">
+                <Typography.Text>SUI content coming soon...</Typography.Text>
+              </Card>
             </Space>
-          </Card> */}
-        </Space>
+          </TabPane>
+
+          <TabPane tab="IP" key="ip">
+            <IpOperations />
+          </TabPane>
+        </Tabs>
       </StyledContent>
     </StyledLayout>
   );

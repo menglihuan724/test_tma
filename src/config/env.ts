@@ -11,6 +11,7 @@ interface EnvConfig {
   VITE_SUI_RPC_URL: string;
   VITE_AUTH_TOKEN: string;
   VITE_AUTH_USER: string;
+  VITE_FAKU_CONTRACT_ADDRESS: string;
 }
 
 const env: EnvConfig = {
@@ -30,6 +31,7 @@ const env: EnvConfig = {
   VITE_SUI_RPC_URL: import.meta.env.VITE_SUI_RPC_URL,
   VITE_AUTH_TOKEN: import.meta.env.VITE_AUTH_TOKEN,
   VITE_AUTH_USER: import.meta.env.VITE_AUTH_USER,
+  VITE_FAKU_CONTRACT_ADDRESS: import.meta.env.VITE_FAKU_CONTRACT_ADDRESS,
 };
 
 export default env; 
