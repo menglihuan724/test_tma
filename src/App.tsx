@@ -27,8 +27,8 @@ import {
   getAiStatus,
 } from "./services/fakuClient";
 import env from './config/env';
-import IpOperations from './components/IpOperations';
-import ConfluxWallet from './components/ConfluxWallet';
+import IpOperations from './components/story';
+import ConfluxWallet from './components/conflux';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -476,11 +476,10 @@ function App() {
               <Card title="CONNECT">
                 <ConfluxWallet />
               </Card>
-              <Card title="Interval Settings">
+              {/* <Card title="Interval Settings">
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  {/* 间隔设置相关的组件会在 ConfluxWallet 组件中渲染 */}
                 </Space>
-              </Card>
+              </Card> */}
             </Space>
           </TabPane>
 
