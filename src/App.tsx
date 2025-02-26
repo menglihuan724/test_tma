@@ -493,9 +493,9 @@ function App() {
             </Space>
           </TabPane>
 
-          <TabPane tab="IP" key="ip">
+          {/* <TabPane tab="IP" key="ip">
             <IpOperations />
-          </TabPane>
+          </TabPane> */}
         </Tabs>
       </StyledContent>
     </StyledLayout>
