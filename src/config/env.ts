@@ -13,6 +13,8 @@ interface EnvConfig {
   VITE_AUTH_USER: string;
   VITE_FAKU_CONTRACT_ADDRESS: string;
   VITE_WATCH_ADDRESS: string[];
+  VITE_CFL_OWNER: string;
+  VITE_LP_ADDRESSES:string
 }
 
 const env: EnvConfig = {
@@ -36,6 +38,8 @@ const env: EnvConfig = {
   VITE_WATCH_ADDRESS: import.meta.env.VITE_WATCH_ADDRESS
     ? JSON.parse(import.meta.env.VITE_WATCH_ADDRESS)
     : [],
+  VITE_CFL_OWNER: import.meta.env.VITE_CFL_OWNER,
+  VITE_LP_ADDRESSES: import.meta.env.VITE_LP_ADDRESSES,
 };
 
 export default env; 

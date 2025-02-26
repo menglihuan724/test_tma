@@ -13,6 +13,7 @@ import { createPublicClient, http } from 'viem';
 import { formatEther } from 'viem';
 import type { Address } from 'viem';
 import styled from 'styled-components';
+import env from '../config/env';
 
 interface UserInfo {
   address: string;
@@ -72,11 +73,11 @@ const UserList: React.FC = () => {
   
   const publicClient = createPublicClient({
     chain: confluxESpace,
-    account: import.meta.env.VITE_CFL_OWNER,
+    account: env.VITE_CFL_OWNER,
     transport: http()
   });
 
-  const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as Address;
+  const CONTRACT_ADDRESS = env.VITE_LP_ADDRESSES as Address;
   const ABI = [
     {
       "inputs": [],

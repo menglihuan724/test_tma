@@ -150,14 +150,7 @@ function App() {
     return () => clearInterval(interval);
   }, [fakuStatus]);
 
-  useEffect(() => {
-    // 计算总余额
-    const total = walletBalances.reduce(
-      (acc, wallet) => acc + wallet.balance,
-      0
-    );
-    setTotalBalance(total);
-  }, [walletBalances]);
+
 
   useEffect(() => {
     const fetchBalances = async () => {
@@ -169,7 +162,6 @@ function App() {
           OK_URL,
           OK_DEX_ID
         );
-
         const balances = await Promise.all(
           WALLETS.map(async (wallet: any) => {
             const balance = await client.queryTotalValue(
@@ -218,6 +210,15 @@ function App() {
      
     fetchBalances();
   }, []);
+
+  useEffect(() => {
+    // 计算总余额
+    const total = walletBalances.reduce(
+      (acc, wallet) => acc + wallet.balance,
+      0
+    );
+    setTotalBalance(total);
+  }, [walletBalances]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
