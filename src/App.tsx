@@ -31,7 +31,7 @@ import IpOperations from './components/story';
 import ConfluxWallet from './components/conflux';
 import EventListener from './components/claimeventList';
 import UserList from './components/userList';
-import CreateAccount from './components/CreateAccount';
+import CreateAccount from './components/createAccount';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
