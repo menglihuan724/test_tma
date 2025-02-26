@@ -27,7 +27,7 @@ import {
   getAiStatus,
 } from "./services/fakuClient";
 import env from './config/env';
-import IpOperations from './components/story';
+// import IpOperations from './components/story';
 import ConfluxWallet from './components/conflux';
 import EventListener from './components/claimeventList';
 import UserList from './components/userList';
