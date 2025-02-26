@@ -465,7 +465,7 @@ function App() {
                     </div>
                   ))}
                   <Typography.Text strong>
-                    Total Balance: {totalBalance.toFixed(4)}
+                    Total Balance: {totalBalance.toFixed(2)}
                   </Typography.Text>
                 </Space>
               </Card>
