@@ -4,6 +4,8 @@ import env from '../config/env';
 
 const totalPath = "/api/v5/wallet/asset/total-value-by-address";
 const tradePath = "/api/v5/wallet/post-transaction/transactions-by-address";
+const creatAccount="/api/v5/wallet/account/create-wallet-account"
+const accountTotalPath="/api/v5/wallet/asset/total-value"
 
 interface BalanceParams {
   address: string;
@@ -11,6 +13,39 @@ interface BalanceParams {
   assetType?: string;
   excludeRiskToken?: boolean;
 }
+
+interface CreateAccountParams {
+  addresses: string[];
+  chainIndex: string;
+  address: string;
+}
+
+interface AccountTotalValueParams {
+  accountId: string;
+  chains?: string;
+  assetType?: string;
+  excludeRiskToken?: boolean;
+}
+
+// 基础响应类型
+interface OkxBaseRes<T> {
+  code: string;
+  msg: string;
+  data: T;
+}
+
+// 总资产响应数据类型
+interface TotalValueData {
+  totalValue: string;
+}
+
+// 创建账户响应数据类型
+interface CreateAccountData {
+  accountId: string;
+}
+
+// 修改之前的接口定义
+interface TotalValueResponse extends OkxBaseRes<TotalValueData[]> {}
 
 export class OKXClient {
   private apiKey: string;
@@ -98,23 +133,37 @@ export class OKXClient {
     });
   }
 
-  private sendPostRequest(request_path, params) {
-    const { signature, timestamp } = this.createSignature(
-      "POST",
-      request_path,
-      params
-    );
+  private sendPostRequest(request_path: string, params: any) {
+    return new Promise((resolve, reject) => {
+      const { signature, timestamp } = this.createSignature(
+        "POST",
+        request_path,
+        params
+      );
+      console.log(params);
+      const headers = {
+        "OK-ACCESS-KEY": this.apiKey,
+        "OK-ACCESS-SIGN": signature,
+        "OK-ACCESS-TIMESTAMP": timestamp,
+        "OK-ACCESS-PASSPHRASE": this.passphrase,
+        "OK-ACCESS-PROJECT": this.projectId,
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${btoa(`${env.VITE_AUTH_USER}:${env.VITE_AUTH_TOKEN}`)}`
+      };
 
-    const headers = {
-      "OK-ACCESS-KEY": this.apiKey,
-      "OK-ACCESS-SIGN": signature,
-      "OK-ACCESS-TIMESTAMP": timestamp,
-      "OK-ACCESS-PASSPHRASE": this.passphrase,
-      "Content-Type": "application/json",
-    };
+      this.httpClient
+        .post(request_path, params, { headers })
+        .then(function (response) {
+          resolve(response.data);
+        })
+        .catch(function (error) {
+          console.error(error);
+          reject(error);
+        });
+    });
   }
 
-  async queryTotalValue(address: string, chains: string) {
+  async queryTotalValue(address: string, chains: string): Promise<number> {
     const getParams = {
       address,
       chains,
@@ -122,12 +171,54 @@ export class OKXClient {
       excludeRiskToken: true 
     };
     
-    const res = await this.sendGetRequest(totalPath, getParams);
+    const res = await this.sendGetRequest(totalPath, getParams) as OkxBaseRes<TotalValueData[]>;
     if (res.code === '0') {
       return Number(res.data[0]?.totalValue || 0);
     } else {
       console.error('API Error:', res);
       return 0;
+    }
+  }
+
+  async createAccount(params: CreateAccountParams): Promise<CreateAccountData> {
+    try {
+      const response = await this.sendPostRequest(creatAccount, params) as OkxBaseRes<CreateAccountData>;
+      if (response.code === '0') {
+        return response.data;
+      } else {
+        throw new Error(response.msg || 'Failed to create account');
+      }
+    } catch (error) {
+      console.error('Error creating account:', error);
+      throw error;
+    }
+  }
+
+  async queryAccountTotalValue({
+    accountId,
+    chains,
+    assetType = '0',
+    excludeRiskToken = true
+  }: AccountTotalValueParams): Promise<number> {
+    try {
+      const params = {
+        accountId,
+        chains,
+        assetType,
+        excludeRiskToken
+      };
+
+      const response = await this.sendGetRequest(accountTotalPath, params) as OkxBaseRes<TotalValueData[]>;
+
+      if (response.code === '0') {
+        return Number(response.data[0]?.totalValue || 0);
+      } else {
+        console.error('API Error:', response);
+        throw new Error(response.msg || 'Failed to query account total value');
+      }
+    } catch (error) {
+      console.error('Error querying account total value:', error);
+      throw error;
     }
   }
 }

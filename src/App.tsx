@@ -29,6 +29,9 @@ import {
 import env from './config/env';
 import IpOperations from './components/story';
 import ConfluxWallet from './components/conflux';
+import EventListener from './components/claimeventList';
+import UserList from './components/userList';
+import CreateAccount from './components/CreateAccount';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -148,6 +151,15 @@ function App() {
   }, [fakuStatus]);
 
   useEffect(() => {
+    // 计算总余额
+    const total = walletBalances.reduce(
+      (acc, wallet) => acc + wallet.balance,
+      0
+    );
+    setTotalBalance(total);
+  }, [walletBalances]);
+
+  useEffect(() => {
     const fetchBalances = async () => {
       try {
         const client = new OKXClient(
@@ -173,50 +185,39 @@ function App() {
         );
 
         setWalletBalances(balances);
+        const interval = setInterval(async () => {
+          try {
 
-        // 为每个钱包设置定时器
-        balances.forEach((wallet) => {
-          const interval = setInterval(async () => {
-            const balance = await client.queryTotalValue(
-              wallet.address,
-              wallet.chain
-            );
-            setWalletBalances((prevBalances) =>
-              prevBalances.map((prevWallet) => {
-                if (
-                  prevWallet.address === wallet.address &&
-                  prevWallet.chain === wallet.chain
-                ) {
-                  return {
-                    ...prevWallet,
-                    balance: balance,
-                  };
-                }
-                return prevWallet;
+            // 刷新各钱包余额
+            const newBalances = await Promise.all(
+              WALLETS.map(async (wallet: any) => {
+                const balance = await client.queryTotalValue(
+                  wallet.address,
+                  wallet.chains
+                );
+                return {
+                  address: wallet.address,
+                  chain: wallet.chains,
+                  balance: balance,
+                };
               })
             );
-          }, 15000); // 20秒
+            setWalletBalances(newBalances);
+          } catch (error) {
+            console.error('Failed to refresh balances:', error);
+          }
+        }, 15000); 
 
-          // 清除定时器
-          return () => clearInterval(interval);
-        });
+        return () => clearInterval(interval);
+
       } catch (error) {
         message.error("Failed to fetch balances");
         console.error(error);
       }
     };
-
+     
     fetchBalances();
   }, []);
-
-  useEffect(() => {
-    // 计算总余额
-    const total = walletBalances.reduce(
-      (acc, wallet) => acc + wallet.balance,
-      0
-    );
-    setTotalBalance(total);
-  }, [walletBalances]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -459,7 +460,7 @@ function App() {
                         {wallet.address}
                       </Typography.Text>
                       <Typography.Text strong>
-                        {wallet.balance.toFixed(4)} (Chain: {wallet.chain})
+                        {wallet.balance.toFixed(2)} (Chain: {wallet.chain})
                       </Typography.Text>
                     </div>
                   ))}
@@ -476,10 +477,11 @@ function App() {
               <Card title="CONNECT">
                 <ConfluxWallet />
               </Card>
-              {/* <Card title="Interval Settings">
-                <Space direction="vertical" style={{ width: '100%' }}>
-                </Space>
-              </Card> */}
+              <Card title="Account Management">
+                <CreateAccount />
+              </Card>
+              <EventListener />
+              <UserList />
             </Space>
           </TabPane>
 
