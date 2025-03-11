@@ -6,7 +6,8 @@ import {
   Space, 
   Card,
   Button,
-  message
+  message,
+  Tag
 } from 'antd';
 import { confluxESpace } from 'viem/chains';
 import { createPublicClient, http } from 'viem';
@@ -14,6 +15,7 @@ import { formatEther } from 'viem';
 import type { Address } from 'viem';
 import styled from 'styled-components';
 import env from '../config/env';
+import { ReloadOutlined } from '@ant-design/icons';
 
 interface UserInfo {
   address: string;
@@ -22,6 +24,7 @@ interface UserInfo {
   inviteNum: number;
   contribution: string;
   stakedAmount: string;
+  currentEarnings: string;
 }
 
 const StyledSpace = styled(Space)`
@@ -105,6 +108,35 @@ const UserList: React.FC = () => {
       ],
       "stateMutability": "view",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        }
+      ],
+      "name": "earned",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "stakedReward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "contributionReward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "nodeReward",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     }
   ] as const;
 
@@ -112,40 +144,62 @@ const UserList: React.FC = () => {
     try {
       setLoading(true);
       
-      // 获取所有用户地址
       const userAddresses = await publicClient.readContract({
         address: CONTRACT_ADDRESS,
         abi: ABI,
         functionName: 'getUserInviteNum',
       }) as Address[];
 
-      // 使用multicall批量查询用户信息
-      const multicallResults = await publicClient.multicall({
-        contracts: userAddresses.map((address) => ({
+      // Combine all queries into one multicall
+      const contracts = userAddresses.flatMap((address) => [
+        {
           address: CONTRACT_ADDRESS,
           abi: ABI,
           functionName: 'userInfoOf',
           args: [address]
-        }))
-      });
+        },
+        {
+          address: CONTRACT_ADDRESS,
+          abi: ABI,
+          functionName: 'earned',
+          args: [address]
+        }
+      ]);
 
-      // 整理数据
-      const userData: UserInfo[] = multicallResults.map((result, index) => {
-        if (!result.result) return null;
-        const data = result.result;
+      const results = await publicClient.multicall({ contracts });
+
+      // Process results in pairs (userInfo and earned for each address)
+      const userData: UserInfo[] = userAddresses.map((address, index) => {
+        const userInfoResult = results[index * 2];
+        const earningsResult = results[index * 2 + 1];
+        
+        if (!userInfoResult.result || !earningsResult.result) return null;
+
+        const userInfo = userInfoResult.result;
+        const earnings = earningsResult.result;
+
+        // Calculate total current earnings
+        const totalEarnings = (
+          Number(formatEther(earnings[0])) + // stakedReward
+          Number(formatEther(earnings[1])) + // contributionReward
+          Number(formatEther(earnings[2]))   // nodeReward
+        ).toFixed(2);
+
         return {
-          address: userAddresses[index],
-          inviteNum: Number(data[1]),
-          contribution: Number(formatEther(data[2])).toFixed(2),
-          stakedAmount: Number(formatEther(data[3])).toFixed(2),
-          level: Number(data[11]),
-          totalRewards: Number(formatEther(data[10])).toFixed(2) // userTotalReward
+          address,
+          inviteNum: Number(userInfo[1]),
+          contribution: Number(formatEther(userInfo[2])).toFixed(2),
+          stakedAmount: Number(formatEther(userInfo[3])).toFixed(2),
+          level: Number(userInfo[11]),
+          totalRewards: Number(formatEther(userInfo[10])).toFixed(2),
+          currentEarnings: totalEarnings
         };
       }).filter((user): user is UserInfo => user !== null);
 
       setUsers(userData);
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      message.error('Failed to fetch user data');
     } finally {
       setLoading(false);
     }
@@ -198,14 +252,16 @@ const UserList: React.FC = () => {
           <path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0011.6 0l43.6-43.5a8.2 8.2 0 000-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"></path>
         </svg>
       ),
-      render: (address: string) => (
-        <HashCell 
-          onClick={() => copyToClipboard(address)}
-          title={`Click to copy: ${address}`}
-        >
-          {formatHash(address)}
-        </HashCell>
-      ),
+      render: (address: string) => {
+        return (
+          <HashCell 
+            onClick={() => copyToClipboard(address)}
+            title={`Click to copy: ${address}`}
+          >
+            {formatHash(address)}
+          </HashCell>
+        );
+      },
       width: 120,
     },
     {
@@ -226,7 +282,16 @@ const UserList: React.FC = () => {
       width: 100,
     },
     {
-      title: 'Total Rewards (CFX)',
+      title: 'Earnings(CFL)',
+      dataIndex: 'currentEarnings',
+      key: 'currentEarnings',
+      sorter: (a: UserInfo, b: UserInfo) => 
+        parseFloat(a.currentEarnings) - parseFloat(b.currentEarnings),
+      render: (value: string) => `${value}`,
+      width: 150,
+    },
+    {
+      title: 'Total (USDT)',
       dataIndex: 'totalRewards',
       key: 'totalRewards',
       sorter: (a: UserInfo, b: UserInfo) => 
@@ -271,7 +336,18 @@ const UserList: React.FC = () => {
   };
 
   return (
-    <StyledCard title="User List">
+    <StyledCard 
+      title="User List"
+      extra={
+        <Button 
+          type="primary" 
+          onClick={fetchUsers}
+          icon={<ReloadOutlined />}
+        >
+          Refresh
+        </Button>
+      }
+    >
       <StyledSpace direction="vertical" size="middle">
         <Space>
           <Button 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, Space, Typography, Table, Button, message } from "antd";
+import { Card, Space, Typography, Table, Button, message, Tag } from "antd";
 import {
   createPublicClient,
   http,
@@ -10,6 +10,7 @@ import {
 import { confluxESpace } from "viem/chains";
 import styled from "styled-components";
 import env from "../config/env";
+import { ReloadOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -207,14 +208,21 @@ const EventListener: React.FC = () => {
       title: "Account",
       dataIndex: "account",
       key: "account",
-      render: (account: string) => (
-        <HashCell 
-          onClick={() => copyToClipboard(account)}
-          title={`Click to copy: ${account}`}
-        >
-          {formatHash(account)}
-        </HashCell>
-      ),
+      render: (account: string) => {
+        const isWatchAddress = WATCH_ADDRESSES.includes(account.toLowerCase());
+        return (
+          <HashCell 
+            onClick={() => copyToClipboard(account)}
+            title={`Click to copy: ${account}`}
+          >
+            {isWatchAddress ? (
+              <Tag color="red">{formatHash(account)}</Tag>
+            ) : (
+              formatHash(account)
+            )}
+          </HashCell>
+        );
+      },
       width: 120,
     },
     {
@@ -240,7 +248,18 @@ const EventListener: React.FC = () => {
   }, []);
 
   return (
-    <StyledCard title="Reward Events">
+    <StyledCard 
+      title="Reward Events"
+      extra={
+        <Button 
+          type="primary" 
+          onClick={fetchRecentDayEvents}
+          icon={<ReloadOutlined />}
+        >
+          Refresh
+        </Button>
+      }
+    >
       <StyledSpace direction="vertical" style={{ width: "100%" }}>
         <Space>
           <Button
