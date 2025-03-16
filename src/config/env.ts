@@ -14,7 +14,9 @@ interface EnvConfig {
   VITE_FAKU_CONTRACT_ADDRESS: string;
   VITE_WATCH_ADDRESS: string[];
   VITE_CFL_OWNER: string;
-  VITE_LP_ADDRESSES:string
+  VITE_LP_ADDRESSES:string;
+  VITE_COINMARKETCAP_API_KEY:string;
+  VITE_COIN_URL:string
 }
 
 const env: EnvConfig = {
@@ -40,6 +42,8 @@ const env: EnvConfig = {
     : [],
   VITE_CFL_OWNER: import.meta.env.VITE_CFL_OWNER,
   VITE_LP_ADDRESSES: import.meta.env.VITE_LP_ADDRESSES,
+  VITE_COINMARKETCAP_API_KEY: import.meta.env.VITE_COINMARKETCAP_API_KEY,
+  VITE_COIN_URL: import.meta.env.VITE_COIN_URL,
 };
 
 export default env; 

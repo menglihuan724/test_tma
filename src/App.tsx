@@ -32,6 +32,7 @@ import ConfluxWallet from './components/conflux';
 import EventListener from './components/claimeventList';
 import UserList from './components/userList';
 import CreateAccount from './components/createAccount';
+import MarketOverview from './components/marketOverview';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -491,6 +492,12 @@ function App() {
               <Card title="SUI Operations">
                 <Typography.Text>SUI content coming soon...</Typography.Text>
               </Card>
+            </Space>
+          </TabPane>
+
+          <TabPane tab="Market" key="market">
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <MarketOverview />
             </Space>
           </TabPane>
 

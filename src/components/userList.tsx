@@ -344,7 +344,6 @@ const UserList: React.FC = () => {
           onClick={fetchUsers}
           icon={<ReloadOutlined />}
         >
-          Refresh
         </Button>
       }
     >

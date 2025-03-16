@@ -256,7 +256,6 @@ const EventListener: React.FC = () => {
           onClick={fetchRecentDayEvents}
           icon={<ReloadOutlined />}
         >
-          Refresh
         </Button>
       }
     >
