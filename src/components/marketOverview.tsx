@@ -114,7 +114,7 @@ const MarketOverview: React.FC = () => {
     >
       {marketData && (
         <OverviewContainer>
-              {/* Fear and Greed Index */}
+          {/* Fear and Greed Index */}
           {fearAndGreedData && (
             <>
               <SectionTitle>Fear & Greed Index</SectionTitle>
@@ -141,6 +141,7 @@ const MarketOverview: React.FC = () => {
               </MetricCard>
             </>
           )}
+          
           {/* Market Cap Section */}
           <SectionTitle>Market Capitalization</SectionTitle>
           
@@ -149,6 +150,9 @@ const MarketOverview: React.FC = () => {
             <Text strong>
               {formatCurrency(marketData.quote.USD.total_market_cap)}
             </Text>
+            <div>
+              {formatPercentage(marketData.quote.USD.total_market_cap_yesterday_percentage_change)}
+            </div>
           </MetricCard>
 
           <MetricCard>
@@ -172,6 +176,16 @@ const MarketOverview: React.FC = () => {
             <Title level={4}>Total Volume</Title>
             <Text strong>
               {formatCurrency(marketData.quote.USD.total_volume_24h)}
+            </Text>
+            <div>
+              {formatPercentage(marketData.quote.USD.total_volume_24h_yesterday_percentage_change)}
+            </div>
+          </MetricCard>
+
+          <MetricCard>
+            <Title level={4}>Yesterday Volume</Title>
+            <Text strong>
+              {formatCurrency(marketData.quote.USD.total_volume_24h_yesterday)}
             </Text>
           </MetricCard>
 
@@ -233,8 +247,6 @@ const MarketOverview: React.FC = () => {
             <Title level={4}>ETH Dominance</Title>
             <Text strong>{marketData.eth_dominance.toFixed(2)}%</Text>
           </MetricCard>
-
-        
         </OverviewContainer>
       )}
     </StyledCard>
