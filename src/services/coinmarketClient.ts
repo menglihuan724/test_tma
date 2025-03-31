@@ -1,5 +1,6 @@
 import axios from "axios";
 import env from "../config/env";
+import { getCoinmarketClient } from './clientManager';
 
 export interface MarketData {
   active_cryptocurrencies: number;
@@ -88,17 +89,11 @@ export interface FearAndGreedData {
   };
 }
 
-const coinClient = axios.create({
-  baseURL: env.VITE_COIN_URL,
-  headers: {
-    "X-CMC_PRO_API_KEY": env.VITE_COINMARKETCAP_API_KEY || "",
-    Authorization: `Basic ${btoa(`${env.VITE_AUTH_USER}:${env.VITE_AUTH_TOKEN}`)}`,
-  },
-  timeout: 50000,
-});
+
 
 export const getMarketOverview = async (): Promise<MarketData> => {
   try {
+    const coinClient = getCoinmarketClient();
     const response = await coinClient.get<CoinMarketCapResponse>(
       `/v1/global-metrics/quotes/latest`
     );
@@ -125,6 +120,7 @@ export const getFearAndGreedLevel = (value: number): string => {
 
 export const getFearAndGreedIndex = async (): Promise<FearAndGreedData['data']> => {
   try {
+    const coinClient = getCoinmarketClient();
     const response = await coinClient.get<FearAndGreedData>(
       `/v3/fear-and-greed/latest`
     );

@@ -1,9 +1,21 @@
 export const onRequest = async (context) => {
   const { request } = context;
+  console.log(`request:${request.url}`);
   const url = new URL(request.url);
-  url.hostname = url.hostname.replace(/-test\./, ".");
-  const newRequest = new Request(url, request);
-  // console.log(`call :${newRequest.url.hostname}`)
+  const faku_url = await context.env.faku_h5.get("public_url");
+  const baseUrl = new URL(faku_url);
+
+  url.hostname = baseUrl.hostname;
+  url.protocol = baseUrl.protocol;
+  url.port = baseUrl.port;
+  const newRequest = new Request(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+    // redirect: request.redirect,
+    // cf: request.cf
+  });
+  console.log(`call :${newRequest.url.hostname}`)
   const response = fetch(newRequest);
   return response;
 };

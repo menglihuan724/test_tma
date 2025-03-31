@@ -33,6 +33,7 @@ import EventListener from './components/claimeventList';
 import UserList from './components/userList';
 import CreateAccount from './components/createAccount';
 import MarketOverview from './components/marketOverview';
+import { getFakuClient, getOkxClient } from './services/clientManager';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -73,7 +74,8 @@ declare global {
 }
 // 使用 import.meta.env 访问环境变量
 const LP_OPTIONS = env.VITE_LP_OPTIONS;
-const BASE_URL = env.VITE_BASE_URL;
+const BASE_URL = env.VITE_BASE_URL; 
+const API_URL = env.VITE_API_URL;
 const OK_DEX_API_KEY = env.VITE_OK_DEX_API_KEY;
 const OK_DEX_SECRET = env.VITE_OK_DEX_SECRET;
 const OK_DEX_PASS = env.VITE_OK_DEX_PASS;
@@ -156,13 +158,7 @@ function App() {
   useEffect(() => {
     const fetchBalances = async () => {
       try {
-        const client = new OKXClient(
-          OK_DEX_API_KEY,
-          OK_DEX_SECRET,
-          OK_DEX_PASS,
-          OK_URL,
-          OK_DEX_ID
-        );
+        const client = getOkxClient();
         const balances = await Promise.all(
           WALLETS.map(async (wallet: any) => {
             const balance = await client.queryTotalValue(
@@ -239,11 +235,12 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const testNet = async () => {
+  const handleTestNet = async () => {
     try {
       setLoading(true);
-      const result = await testNet();
-      message.success(result);
+      const client = getFakuClient();
+      const result = await client.get('/startBot');
+      message.success(result.data);
     } catch (error) {
       message.error("Network test failed");
     } finally {
@@ -358,7 +355,7 @@ function App() {
                   <Button
                     type="primary"
                     icon={<ApiOutlined />}
-                    onClick={testNet}
+                    onClick={handleTestNet}
                     loading={loading}
                   >
                     Test Network

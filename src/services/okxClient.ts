@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import CryptoJS from "crypto-js";
 import env from '../config/env';
+import { getOkxClient } from './clientManager';
 
 const totalPath = "/api/v5/wallet/asset/total-value-by-address";
 const tradePath = "/api/v5/wallet/post-transaction/transactions-by-address";

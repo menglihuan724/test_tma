@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input, Button } from 'antd';
+import env from './config/env';
 
 function Login() {
   const [password, setPassword] = useState('');
@@ -8,7 +9,7 @@ function Login() {
   const history = useNavigate();
 
   const handleLogin = () => {
-    if (password === import.meta.env.VITE_PASSWORD) {
+    if (password === env.VITE_PASSWORD) {
       // 密码正确，设置登录状态并跳转到主页
       localStorage.setItem('isLoggedIn', 'true');
       history('/home');
