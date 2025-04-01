@@ -2,9 +2,10 @@ import { verifyAuth } from "../services/cloudfareClient";
 import CryptoJS from "crypto-js";
 
 // 标记敏感字段的装饰器类型
-type Sensitive = {
+type Sensitive<T = string> = {
   encrypted: boolean;
   value: string;
+  originalType: 'string' | 'array' | 'object';
 };
 
 interface EnvConfig {
@@ -17,27 +18,57 @@ interface EnvConfig {
   VITE_OK_DEX_PASS: string | Sensitive;
   VITE_OK_DEX_ID: string;
   VITE_OK_URL: string;
-  VITE_WALLETS: { chains: string; address: string }[];
+  VITE_WALLETS: { chains: string; address: string }[] | Sensitive;
   VITE_PASSWORD: string | Sensitive;
   VITE_SUI_RPC_URL: string;
   VITE_AUTH_TOKEN: string | Sensitive;
   VITE_AUTH_USER: string;
-  VITE_FAKU_CONTRACT_ADDRESS: string;
+  VITE_FAKU_CONTRACT_ADDRESS: string | Sensitive;
   VITE_WATCH_ADDRESS: string[];
   VITE_CFL_OWNER: string;
   VITE_LP_ADDRESSES: string;
   VITE_COINMARKETCAP_API_KEY: string | Sensitive;
   VITE_COIN_URL: string;
   VITE_LPAIR_ADDRESS: string;
+  VITE_FAKU_LP: string[] | Sensitive;
 }
 
-const sensitive = (value: string): Sensitive => ({
+// 敏感字符串
+const sensitiveString = (value: string): Sensitive => ({
   encrypted: true,
-  value
+  value,
+  originalType: 'string'
 });
 
+// 敏感数组
+const sensitiveArray = (value: string): Sensitive => ({
+  encrypted: true,
+  value,
+  originalType: 'array'
+});
+
+// 敏感对象
+const sensitiveObject = (value: string): Sensitive => ({
+  encrypted: true,
+  value,
+  originalType: 'object'
+});
+
+// 通用敏感值处理函数
+const sensitive = (value: any): Sensitive => {
+  if (typeof value === 'string') {
+    return sensitiveString(value);
+  } else if (Array.isArray(value)) {
+    return sensitiveArray(value);
+  } else if (typeof value === 'object' && value !== null) {
+    return sensitiveObject(value);
+  }
+  // 默认处理为字符串
+  return sensitiveString(String(value));
+};
+
 // 解密函数（使用从密钥派生的 IV）
-const decrypt = (encryptedValue: string, key: string): string => {
+const decrypt = (encryptedValue: string, key: string, originalType: 'string' | 'array' | 'object'): any => {
   try {
     // 从密钥派生 IV（使用 SHA-256 哈希）
     const keyHash = CryptoJS.SHA256(key).toString();
@@ -48,10 +79,24 @@ const decrypt = (encryptedValue: string, key: string): string => {
       padding: CryptoJS.pad.Pkcs7
     });
     
-    return decrypted.toString(CryptoJS.enc.Utf8);
+    const decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+    // console.log(decryptedString);
+    // 根据原始类型转换回相应的数据结构
+    if (originalType === 'string') {
+      return decryptedString;
+    } else if (originalType === 'array' || originalType === 'object') {
+      try {
+        return JSON.parse(decryptedString);
+      } catch (e) {
+        console.error("Failed to parse decrypted JSON:", e);
+        return originalType === 'array' ? [] : {};
+      }
+    }
+    
+    return decryptedString;
   } catch (error) {
     console.error("Failed to decrypt value:", error);
-    return "";
+    return originalType === 'string' ? "" : (originalType === 'array' ? [] : {});
   }
 };
 
@@ -60,7 +105,7 @@ let decryptionKey: string | null = null;
 let envConfig: EnvConfig;
 
 // 初始化环境配置
-const initEnv =  ():EnvConfig => {
+const initEnv = (): EnvConfig => {
   // 确定环境类型
   const environment = import.meta.env.VITE_ENV || "dev";
   
@@ -73,38 +118,43 @@ const initEnv =  ():EnvConfig => {
       ? JSON.parse(import.meta.env.VITE_LP_OPTIONS)
       : [],
     VITE_OK_DEX_API_KEY: environment === "prod" 
-      ? sensitive(import.meta.env.VITE_OK_DEX_API_KEY) 
+      ? sensitiveString(import.meta.env.VITE_OK_DEX_API_KEY) 
       : import.meta.env.VITE_OK_DEX_API_KEY,
     VITE_OK_DEX_SECRET: environment === "prod" 
-      ? sensitive(import.meta.env.VITE_OK_DEX_SECRET) 
+      ? sensitiveString(import.meta.env.VITE_OK_DEX_SECRET) 
       : import.meta.env.VITE_OK_DEX_SECRET,
     VITE_OK_DEX_PASS: environment === "prod" 
-      ? sensitive(import.meta.env.VITE_OK_DEX_PASS) 
+      ? sensitiveString(import.meta.env.VITE_OK_DEX_PASS) 
       : import.meta.env.VITE_OK_DEX_PASS,
     VITE_OK_DEX_ID: import.meta.env.VITE_OK_DEX_ID,
     VITE_OK_URL: import.meta.env.VITE_OK_URL,
-    VITE_WALLETS: import.meta.env.VITE_WALLETS
-      ? JSON.parse(import.meta.env.VITE_WALLETS)
-      : [],
+    VITE_WALLETS: environment === "prod" 
+      ? sensitiveArray(import.meta.env.VITE_WALLETS)
+      : (import.meta.env.VITE_WALLETS ? JSON.parse(import.meta.env.VITE_WALLETS) : []),
     VITE_PASSWORD: environment === "prod" 
-      ? sensitive(import.meta.env.VITE_PASSWORD) 
+      ? sensitiveString(import.meta.env.VITE_PASSWORD) 
       : import.meta.env.VITE_PASSWORD,
     VITE_SUI_RPC_URL: import.meta.env.VITE_SUI_RPC_URL,
     VITE_AUTH_TOKEN: environment === "prod" 
-      ? sensitive(import.meta.env.VITE_AUTH_TOKEN) 
+      ? sensitiveString(import.meta.env.VITE_AUTH_TOKEN) 
       : import.meta.env.VITE_AUTH_TOKEN,
     VITE_AUTH_USER: import.meta.env.VITE_AUTH_USER,
-    VITE_FAKU_CONTRACT_ADDRESS: import.meta.env.VITE_FAKU_CONTRACT_ADDRESS,
+    VITE_FAKU_CONTRACT_ADDRESS: environment === "prod" 
+      ? sensitiveString(import.meta.env.VITE_FAKU_CONTRACT_ADDRESS) 
+      : import.meta.env.VITE_FAKU_CONTRACT_ADDRESS,
     VITE_WATCH_ADDRESS: import.meta.env.VITE_WATCH_ADDRESS
       ? JSON.parse(import.meta.env.VITE_WATCH_ADDRESS)
       : [],
     VITE_CFL_OWNER: import.meta.env.VITE_CFL_OWNER,
     VITE_LP_ADDRESSES: import.meta.env.VITE_LP_ADDRESSES,
     VITE_COINMARKETCAP_API_KEY: environment === "prod" 
-      ? sensitive(import.meta.env.VITE_COINMARKETCAP_API_KEY) 
+      ? sensitiveString(import.meta.env.VITE_COINMARKETCAP_API_KEY) 
       : import.meta.env.VITE_COINMARKETCAP_API_KEY,
     VITE_COIN_URL: import.meta.env.VITE_COIN_URL,
-    VITE_LPAIR_ADDRESS: import.meta.env.VITE_LPAIR_ADDRESS
+    VITE_LPAIR_ADDRESS: import.meta.env.VITE_LPAIR_ADDRESS,
+    VITE_FAKU_LP: environment === "prod" 
+      ? sensitiveArray(import.meta.env.VITE_FAKU_LP)
+      : (import.meta.env.VITE_FAKU_LP ? JSON.parse(import.meta.env.VITE_FAKU_LP) : []),
   };
 
   return config;
@@ -116,17 +166,16 @@ const envHandler = {
     if (value && typeof value === 'object' && 'encrypted' in value && value.encrypted) {
       if (!decryptionKey) {
         console.error(`Cannot access encrypted value for ${String(prop)} without decryption key`);
-        return "";
+        return value.originalType === 'string' ? "" : (value.originalType === 'array' ? [] : {});
       }
-      const res=decrypt(value.value, decryptionKey);
-      return res
+      return decrypt(value.value, decryptionKey, value.originalType);
     }
     
     return value;
   }
 };
 
-const rawEnv =  initEnv();
+const rawEnv = initEnv();
 envConfig = new Proxy(rawEnv, envHandler);
 
 // 设置解密密钥
@@ -150,7 +199,7 @@ export const initializeSecureEnv = async (): Promise<boolean> => {
       return false;
     }
   }
-  return true; // 在开发环境中不需要解密
+  return true; 
 };
 
 // 检查安全环境是否已初始化

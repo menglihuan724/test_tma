@@ -7,6 +7,7 @@ const totalPath = "/api/v5/wallet/asset/total-value-by-address";
 const tradePath = "/api/v5/wallet/post-transaction/transactions-by-address";
 const creatAccount="/api/v5/wallet/account/create-wallet-account"
 const accountTotalPath="/api/v5/wallet/asset/total-value"
+const tokenBalancesPath = "/api/v5/wallet/asset/all-token-balances-by-address";
 
 interface BalanceParams {
   address: string;
@@ -47,6 +48,23 @@ interface CreateAccountData {
 
 // 修改之前的接口定义
 interface TotalValueResponse extends OkxBaseRes<TotalValueData[]> {}
+
+// 新增接口定义
+interface TokenBalance {
+  chainIndex: string;
+  tokenAddress: string;
+  symbol: string;
+  balance: string;
+  tokenPrice: string;
+  tokenType: string;
+  isRiskToken: boolean;
+  transferAmount: string;
+  availableAmount: string;
+  rawBalance: string;
+  address: string;
+}
+
+interface TokenBalancesResponse extends OkxBaseRes<{tokenAssets: TokenBalance[]}[]> {}
 
 export class OKXClient {
   private apiKey: string;
@@ -219,6 +237,61 @@ export class OKXClient {
       }
     } catch (error) {
       console.error('Error querying account total value:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取地址的所有代币余额
+   * @param address 钱包地址
+   * @param chains 链ID，多个链以逗号分隔
+   * @returns 代币余额列表
+   */
+  async getTokenBalances(address: string, chains: string): Promise<TokenBalance[]> {
+    try {
+      const params = {
+        address,
+        chains,
+        filter: "0" // 过滤风险空投币
+      };
+      
+      const response = await this.sendGetRequest(tokenBalancesPath, params) as TokenBalancesResponse;
+      
+      if (response.code === '0' && response.data && response.data.length > 0) {
+        return response.data[0].tokenAssets || [];
+      } else {
+        console.error('API Error:', response);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching token balances:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取特定代币的余额
+   * @param address 钱包地址
+   * @param chains 链ID，多个链以逗号分隔
+   * @param symbol 代币符号
+   * @returns 代币余额和价值
+   */
+  async getSpecificTokenBalance(address: string, chains: string, symbol: string): Promise<{balance: string, value: number,price:number} | null> {
+    try {
+      const tokens = await this.getTokenBalances(address, chains);
+      const token = tokens.find(t => t.symbol.toUpperCase() === symbol.toUpperCase());
+      
+      if (token) {
+        return {
+          balance: token.balance,
+          value: Number(token.balance) * Number(token.tokenPrice || 0),
+          price: Number(token.tokenPrice || 0)
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error fetching ${symbol} balance:`, error);
       throw error;
     }
   }

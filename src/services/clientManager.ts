@@ -12,13 +12,11 @@ let coinmarketClientInstance: AxiosInstance | null = null;
  * 在解密密钥可用后调用
  */
 export const initializeClients = () => {
-  // 只有在环境变量已解密的情况下才初始化客户端
   if (!isSecureEnvInitialized()) {
     console.warn('Cannot initialize clients: secure environment not initialized');
     return false;
   }
 
-  // 初始化 Faku 客户端
   fakuClientInstance = axios.create({
     baseURL: env.VITE_API_URL,
     headers: {
@@ -29,6 +27,7 @@ export const initializeClients = () => {
   });
 
   // 初始化 OKX 客户端
+  console.log("初始化欧意库护短")
   okxClientInstance = new OKXClient(
     env.VITE_OK_DEX_API_KEY,
     env.VITE_OK_DEX_SECRET,

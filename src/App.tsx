@@ -10,6 +10,7 @@ import {
   Badge,
   message,
   Tabs,
+  Spin,
 } from "antd";
 import { ReloadOutlined, ApiOutlined, RocketOutlined } from "@ant-design/icons";
 import styled from "styled-components";
@@ -26,14 +27,14 @@ import {
   stopAiJob,
   getAiStatus,
 } from "./services/fakuClient";
-import env from './config/env';
+import env from "./config/env";
 // import IpOperations from './components/story';
-import ConfluxWallet from './components/conflux';
-import EventListener from './components/claimeventList';
-import UserList from './components/userList';
-import CreateAccount from './components/createAccount';
-import MarketOverview from './components/marketOverview';
-import { getFakuClient, getOkxClient } from './services/clientManager';
+import ConfluxWallet from "./components/conflux";
+import EventListener from "./components/claimeventList";
+import UserList from "./components/userList";
+import CreateAccount from "./components/createAccount";
+import MarketOverview from "./components/marketOverview";
+import { getFakuClient, getOkxClient } from "./services/clientManager";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -72,18 +73,10 @@ declare global {
     eruda: any;
   }
 }
-// 使用 import.meta.env 访问环境变量
-const LP_OPTIONS = env.VITE_LP_OPTIONS;
-const BASE_URL = env.VITE_BASE_URL; 
-const API_URL = env.VITE_API_URL;
-const OK_DEX_API_KEY = env.VITE_OK_DEX_API_KEY;
-const OK_DEX_SECRET = env.VITE_OK_DEX_SECRET;
-const OK_DEX_PASS = env.VITE_OK_DEX_PASS;
-const OK_DEX_ID = env.VITE_OK_DEX_ID;
-const OK_URL = env.VITE_OK_URL;
-const WALLETS = env.VITE_WALLETS;
 
 function App() {
+  const LP_OPTIONS = env.VITE_LP_OPTIONS;
+  const WALLETS = env.VITE_WALLETS; 
   const history = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [fakuStatus, setFakuStatus] = useState(0);
@@ -108,6 +101,13 @@ function App() {
   const [historicalSuiTokenBalances, setHistoricalSuiTokenBalances] = useState<
     any[]
   >([]);
+  const [cflBalances, setCflBalances] = useState<
+    { address: string; balance: string; value: number }[]
+  >([]);
+  const [loadingCfl, setLoadingCfl] = useState(false);
+  const [cflTotalBalance, setCflTotalBalance] = useState<number>(0);
+  const [cflPrice, setCflPrice] = useState<number>(0);
+  const [loadingWalletBalances, setLoadingWalletBalances] = useState(false);
 
   useEffect(() => {
     const checkLogin = () => {
@@ -153,69 +153,44 @@ function App() {
     return () => clearInterval(interval);
   }, [fakuStatus]);
 
-
+  const fetchBalances = async () => {
+    try {
+      setLoadingWalletBalances(true);
+      const client = getOkxClient();
+      const balances = await Promise.all(
+        WALLETS.map(async (wallet: any) => {
+          const balance = await client.queryTotalValue(
+            wallet.address,
+            wallet.chains
+          );
+          return {
+            address: wallet.address,
+            chain: wallet.chains,
+            balance,
+          };
+        })
+      );
+      setWalletBalances(balances);
+      const total = balances.reduce((sum, item) => sum + item.balance, 0);
+      setTotalBalance(total);
+    } catch (error) {
+      console.error("Error fetching balances:", error);
+      message.error("Failed to fetch wallet balances");
+    } finally {
+      setLoadingWalletBalances(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBalances = async () => {
-      try {
-        const client = getOkxClient();
-        const balances = await Promise.all(
-          WALLETS.map(async (wallet: any) => {
-            const balance = await client.queryTotalValue(
-              wallet.address,
-              wallet.chains
-            );
-            return {
-              address: wallet.address,
-              chain: wallet.chains,
-              balance: balance,
-            };
-          })
-        );
-
-        setWalletBalances(balances);
-        const interval = setInterval(async () => {
-          try {
-
-            // 刷新各钱包余额
-            const newBalances = await Promise.all(
-              WALLETS.map(async (wallet: any) => {
-                const balance = await client.queryTotalValue(
-                  wallet.address,
-                  wallet.chains
-                );
-                return {
-                  address: wallet.address,
-                  chain: wallet.chains,
-                  balance: balance,
-                };
-              })
-            );
-            setWalletBalances(newBalances);
-          } catch (error) {
-            console.error('Failed to refresh balances:', error);
-          }
-        }, 15000); 
-
-        return () => clearInterval(interval);
-
-      } catch (error) {
-        message.error("Failed to fetch balances");
-        console.error(error);
-      }
-    };
-     
     fetchBalances();
+    
+    // 将刷新间隔改为 5 分钟
+    const balanceInterval = setInterval(fetchBalances, 60000 * 5);
+    
+    return () => {
+      clearInterval(balanceInterval);
+    };
   }, []);
-
-  useEffect(() => {
-    // 计算总余额
-    const total = walletBalances.reduce(
-      (acc, wallet) => acc + wallet.balance,
-      0
-    );
-    setTotalBalance(total);
-  }, [walletBalances]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -239,7 +214,7 @@ function App() {
     try {
       setLoading(true);
       const client = getFakuClient();
-      const result = await client.get('/startBot');
+      const result = await client.get("/startBot");
       message.success(result.data);
     } catch (error) {
       message.error("Network test failed");
@@ -327,6 +302,61 @@ function App() {
     }
   };
 
+  const fetchCflBalances = async () => {
+    try {
+      setLoadingCfl(true);
+      const client = getOkxClient();
+      
+      // 获取 VITE_FAKU_LP 中所有地址的 CFL 代币余额
+      const balances = await Promise.all(
+        env.VITE_FAKU_LP.map(async (address) => {
+          // 假设 CFL 代币在 Conflux 链上，链 ID 为 1030
+          const tokenBalance = await client.getSpecificTokenBalance(
+            address,
+            "1030",
+            "CFL"
+          );
+          return {
+            address,
+            balance: tokenBalance?.balance || "0",
+            value: tokenBalance?.value || 0,
+            price: tokenBalance?.price || 0,
+          };
+        })
+      );
+      
+      // 计算总余额和获取价格
+      let totalBalance = 0;
+      let price = 0;
+      
+      balances.forEach(item => {
+        totalBalance += parseFloat(item.balance);
+        if (item.price > 0 && price === 0) {
+          price = item.price;
+        }
+      });
+      
+      setCflBalances(balances);
+      setCflTotalBalance(totalBalance);
+      setCflPrice(price);
+    } catch (error) {
+      console.error("Error fetching CFL balances:", error);
+      message.error("Failed to fetch CFL balances");
+    } finally {
+      setLoadingCfl(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCflBalances();
+
+    const cflInterval = setInterval(fetchCflBalances, 60000*5); // 每分钟刷新一次
+
+    return () => {
+      clearInterval(cflInterval);
+    };
+  }, []);
+
   if (!isLoggedIn) {
     return null; // 或者显示加载状态
   }
@@ -364,7 +394,11 @@ function App() {
               </Card>
               <Card title="Ai Job Operations">
                 <Space>
-                  <Button type="primary" onClick={toggleAiJob} loading={loading}>
+                  <Button
+                    type="primary"
+                    onClick={toggleAiJob}
+                    loading={loading}
+                  >
                     {aiStatus === 1 ? "Stop Ai Job" : "Start Ai Job"}
                   </Button>
                   <Badge
@@ -450,10 +484,22 @@ function App() {
 
               <Card title="Wallet Balances">
                 <Space direction="vertical" style={{ width: "100%" }}>
+                  <Button
+                    type="primary"
+                    icon={<ReloadOutlined />}
+                    onClick={fetchBalances}
+                    loading={loadingWalletBalances}
+                    style={{ marginBottom: '10px' }}
+                  >
+                  </Button>
+                  {loadingWalletBalances && <Spin />}
                   {walletBalances.map((wallet, index) => (
                     <div
                       key={index}
-                      style={{ display: "flex", justifyContent: "space-between" }}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
                     >
                       <Typography.Text ellipsis style={{ maxWidth: "200px" }}>
                         {wallet.address}
@@ -468,11 +514,55 @@ function App() {
                   </Typography.Text>
                 </Space>
               </Card>
+
+              <Card title="FAKU LP CFL Balances">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Button
+                    type="primary"
+                    icon={<ReloadOutlined />}
+                    onClick={fetchCflBalances}
+                    loading={loadingCfl}
+                  ></Button>
+                  {loadingCfl && <Spin />}
+                  {!loadingCfl && cflBalances.length === 0 && (
+                    <Typography.Text>No CFL tokens found</Typography.Text>
+                  )}
+                  {cflPrice > 0 && (
+                    <Typography.Text strong style={{ color: '#1890ff' }}>
+                      CFL Price: ${cflPrice.toFixed(6)}
+                    </Typography.Text>
+                  )}
+                  {cflBalances.map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Typography.Text ellipsis style={{ maxWidth: "200px" }}>
+                        {item.address}
+                      </Typography.Text>
+                      <Typography.Text strong>
+                        {parseFloat(item.balance).toFixed(4)} CFL ($
+                        {item.value.toFixed(2)})
+                      </Typography.Text>
+                    </div>
+                  ))}
+                  {cflTotalBalance > 0 && (
+                    <div style={{ marginTop: '10px', borderTop: '1px solid #f0f0f0', paddingTop: '10px' }}>
+                      <Typography.Text strong style={{ fontSize: '16px' }}>
+                        Total: {cflTotalBalance.toFixed(4)} CFL (${(cflTotalBalance * cflPrice).toFixed(2)})
+                      </Typography.Text>
+                    </div>
+                  )}
+                </Space>
+              </Card>
             </Space>
           </TabPane>
 
           <TabPane tab="CFX" key="cfx">
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <Card title="CONNECT">
                 <ConfluxWallet />
               </Card>
@@ -493,7 +583,7 @@ function App() {
           </TabPane>
 
           <TabPane tab="Market" key="market">
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <MarketOverview />
             </Space>
           </TabPane>

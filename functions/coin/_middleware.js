@@ -6,12 +6,12 @@ export const onRequest = async (context) => {
     url.hostname = baseUrl.hostname;
     url.protocol = baseUrl.protocol;
     url.port = baseUrl.port;
+    const new_headers = new Headers(request.headers);
+    new_headers.delete("cf-connecting-ip") 
     const newRequest = new Request(url.toString(), {
       method: request.method,
-      headers: request.headers,
+      headers: new_headers,
       body: request.body,
-      // redirect: request.redirect,
-      // cf: request.cf
     });
     // console.log(`call :${newRequest.url.hostname}`)
     const response = fetch(newRequest);

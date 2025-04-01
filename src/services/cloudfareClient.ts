@@ -1,5 +1,4 @@
 import axios from "axios";
-import env from "../config/env";
 
 // 创建 Cloudflare API 客户端
 const cloudfareClient = axios.create({
