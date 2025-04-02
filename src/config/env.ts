@@ -1,5 +1,17 @@
 import { verifyAuth } from "../services/cloudfareClient";
 import CryptoJS from "crypto-js";
+import { decryptSync } from '../decrypt_rs';
+
+
+// 异步解密函数
+const decrypt2 =  (encryptedValue: string, key: string, originalType: 'string' | 'array' | 'object'): any => {
+  try {
+    return  decryptSync(encryptedValue, key, originalType);
+  } catch (error) {
+    // console.error("Failed to decrypt value:", error);
+    return originalType === 'string' ? "" : (originalType === 'array' ? [] : {});
+  }
+};
 
 // 标记敏感字段的装饰器类型
 type Sensitive<T = string> = {
@@ -67,7 +79,6 @@ const sensitive = (value: any): Sensitive => {
   return sensitiveString(String(value));
 };
 
-// 解密函数（使用从密钥派生的 IV）
 const decrypt = (encryptedValue: string, key: string, originalType: 'string' | 'array' | 'object'): any => {
   try {
     // 从密钥派生 IV（使用 SHA-256 哈希）
@@ -168,7 +179,8 @@ const envHandler = {
         console.error(`Cannot access encrypted value for ${String(prop)} without decryption key`);
         return value.originalType === 'string' ? "" : (value.originalType === 'array' ? [] : {});
       }
-      return decrypt(value.value, decryptionKey, value.originalType);
+      // decrypt(value.value, decryptionKey, value.originalType);
+      return decrypt2(value.value, decryptionKey, value.originalType);;
     }
     
     return value;
@@ -181,7 +193,7 @@ envConfig = new Proxy(rawEnv, envHandler);
 // 设置解密密钥
 export const setDecryptionKey = (key: string) => {
   decryptionKey = key;
-  console.log("Decryption key set successfully");
+  // console.log("Decryption key set successfully");
 };
 
 // 检查是否需要获取解密密钥
