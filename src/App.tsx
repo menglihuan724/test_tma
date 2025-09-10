@@ -34,6 +34,7 @@ import EventListener from "./components/claimeventList";
 import UserList from "./components/userList";
 import CreateAccount from "./components/createAccount";
 import MarketOverview from "./components/marketOverview";
+import UniLogTable from "./components/uniLog";
 import { getFakuClient, getOkxClient } from "./services/clientManager";
 
 const { Header, Content } = Layout;
@@ -76,7 +77,7 @@ declare global {
 
 function App() {
   const LP_OPTIONS = env.VITE_LP_OPTIONS;
-  const WALLETS = env.VITE_WALLETS; 
+  const WALLETS = env.VITE_WALLETS;
   const history = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [fakuStatus, setFakuStatus] = useState(0);
@@ -183,10 +184,10 @@ function App() {
 
   useEffect(() => {
     fetchBalances();
-    
+
     // 将刷新间隔改为 5 分钟
     const balanceInterval = setInterval(fetchBalances, 60000 * 5);
-    
+
     return () => {
       clearInterval(balanceInterval);
     };
@@ -306,7 +307,7 @@ function App() {
     try {
       setLoadingCfl(true);
       const client = getOkxClient();
-      
+
       // 获取 VITE_FAKU_LP 中所有地址的 CFL 代币余额
       const balances = await Promise.all(
         env.VITE_FAKU_LP.map(async (address) => {
@@ -324,18 +325,18 @@ function App() {
           };
         })
       );
-      
+
       // 计算总余额和获取价格
       let totalBalance = 0;
       let price = 0;
-      
-      balances.forEach(item => {
+
+      balances.forEach((item) => {
         totalBalance += parseFloat(item.balance);
         if (item.price > 0 && price === 0) {
           price = item.price;
         }
       });
-      
+
       setCflBalances(balances);
       setCflTotalBalance(totalBalance);
       setCflPrice(price);
@@ -350,7 +351,7 @@ function App() {
   useEffect(() => {
     fetchCflBalances();
 
-    const cflInterval = setInterval(fetchCflBalances, 60000*5); // 每分钟刷新一次
+    const cflInterval = setInterval(fetchCflBalances, 60000 * 5); // 每分钟刷新一次
 
     return () => {
       clearInterval(cflInterval);
@@ -489,9 +490,8 @@ function App() {
                     icon={<ReloadOutlined />}
                     onClick={fetchBalances}
                     loading={loadingWalletBalances}
-                    style={{ marginBottom: '10px' }}
-                  >
-                  </Button>
+                    style={{ marginBottom: "10px" }}
+                  ></Button>
                   {loadingWalletBalances && <Spin />}
                   {walletBalances.map((wallet, index) => (
                     <div
@@ -528,7 +528,7 @@ function App() {
                     <Typography.Text>No CFL tokens found</Typography.Text>
                   )}
                   {cflPrice > 0 && (
-                    <Typography.Text strong style={{ color: '#1890ff' }}>
+                    <Typography.Text strong style={{ color: "#1890ff" }}>
                       CFL Price: ${cflPrice.toFixed(6)}
                     </Typography.Text>
                   )}
@@ -550,9 +550,16 @@ function App() {
                     </div>
                   ))}
                   {cflTotalBalance > 0 && (
-                    <div style={{ marginTop: '10px', borderTop: '1px solid #f0f0f0', paddingTop: '10px' }}>
-                      <Typography.Text strong style={{ fontSize: '16px' }}>
-                        Total: {cflTotalBalance.toFixed(4)} CFL (${(cflTotalBalance * cflPrice).toFixed(2)})
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        borderTop: "1px solid #f0f0f0",
+                        paddingTop: "10px",
+                      }}
+                    >
+                      <Typography.Text strong style={{ fontSize: "16px" }}>
+                        Total: {cflTotalBalance.toFixed(4)} CFL ($
+                        {(cflTotalBalance * cflPrice).toFixed(2)})
                       </Typography.Text>
                     </div>
                   )}
@@ -571,6 +578,14 @@ function App() {
               </Card>
               <EventListener />
               <UserList />
+            </Space>
+          </TabPane>
+
+          <TabPane tab="UNI" key="uni_log">
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <Card title="uni_log">
+                <UniLogTable />
+              </Card>
             </Space>
           </TabPane>
 
