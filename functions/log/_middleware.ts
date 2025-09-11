@@ -4,7 +4,7 @@ export interface Env {
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   try {
-    const result = await context.env.faku.prepare("SELECT * FROM uni_log").all();
+    const result = await context.env.faku_db.prepare("SELECT * FROM uni_log").all();
     return new Response(JSON.stringify({ data: result.results }), {
       headers: { "content-type": "application/json" },
     });
