@@ -302,7 +302,6 @@ function App() {
       message.error("Failed to fetch historical Sui balances");
     }
   };
-
   const fetchCflBalances = async () => {
     try {
       setLoadingCfl(true);
