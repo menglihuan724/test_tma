@@ -43,6 +43,8 @@ interface EnvConfig {
   VITE_COIN_URL: string;
   VITE_LPAIR_ADDRESS: string;
   VITE_FAKU_LP: string[] | Sensitive;
+  VITE_CF_ACCESS_CLIENT_ID: string | Sensitive;
+  VITE_CF_ACCESS_CLIENT_SECRET: string | Sensitive;
 }
 
 // 敏感字符串
@@ -166,6 +168,12 @@ const initEnv = (): EnvConfig => {
     VITE_FAKU_LP: environment === "prod" 
       ? sensitiveArray(import.meta.env.VITE_FAKU_LP)
       : (import.meta.env.VITE_FAKU_LP ? JSON.parse(import.meta.env.VITE_FAKU_LP) : []),
+    VITE_CF_ACCESS_CLIENT_ID: environment === "prod"
+      ? sensitiveString(import.meta.env.VITE_CF_ACCESS_CLIENT_ID)
+      : import.meta.env.VITE_CF_ACCESS_CLIENT_ID,
+    VITE_CF_ACCESS_CLIENT_SECRET: environment === "prod"
+      ? sensitiveString(import.meta.env.VITE_CF_ACCESS_CLIENT_SECRET)
+      : import.meta.env.VITE_CF_ACCESS_CLIENT_SECRET,
   };
 
   return config;

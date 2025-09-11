@@ -16,12 +16,15 @@ export const initializeClients = () => {
     console.warn('Cannot initialize clients: secure environment not initialized');
     return false;
   }
-
+  console.log(env.VITE_CF_ACCESS_CLIENT_ID, env.VITE_CF_ACCESS_CLIENT_SECRET)
   fakuClientInstance = axios.create({
     baseURL: env.VITE_API_URL,
     headers: {
-      Authorization: `Basic ${btoa(`${env.VITE_AUTH_USER}:${env.VITE_AUTH_TOKEN}`)}`,
+      // Authorization: `Basic ${btoa(`${env.VITE_AUTH_USER}:${env.VITE_AUTH_TOKEN}`)}`,
       'Content-Type': 'application/json',
+      'CF-Access-Client-Id': env.VITE_CF_ACCESS_CLIENT_ID || '',
+      'CF-Access-Client-Secret': env.VITE_CF_ACCESS_CLIENT_SECRET || ''
+
     },
     timeout: 30000,
   });
