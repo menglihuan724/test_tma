@@ -3,7 +3,7 @@ export const onRequest = async (context) => {
   // console.log(`request:${request.url}`);  
   const url = new URL(request.url);
   const faku_url = await context.env.faku_h5.get("public_url");
-  const baseUrl = new URL(faku_url);
+  const baseUrl = new URL("https://api.faku.info");
 
   url.hostname = baseUrl.hostname;
   url.protocol = baseUrl.protocol;
