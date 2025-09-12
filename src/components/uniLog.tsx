@@ -1,9 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Table, Spin, Typography, message, Button, Input } from "antd";
+import { Table, Spin, Typography, message, Button, Input, Tag } from "antd";
 import type { SortOrder } from "antd/es/table/interface";
 import { SearchOutlined } from "@ant-design/icons";
 
 type Row = Record<string, any> & { address?: string };
+type WindowStat = {
+  key: string;
+  label: string;
+  total: number;
+  success: number;
+  failure: number;
+  revenue_cfx: number;
+  revenue_usdt: number;
+  is_first_fail: number;
+};
 
 const UniLogTable: React.FC = () => {
   const [rows, setRows] = useState<Row[]>([]);
@@ -75,26 +85,65 @@ const UniLogTable: React.FC = () => {
     const keys = Array.from(fieldSet);
     
     return keys.map((key) => {
-      const isAddressField = ['address', 'create_time', 'update_time'].some(field => 
+      const isAddressField = ['address'].some(field => 
         key.toLowerCase().includes(field)
       );
+      const isCreateTime = key.toLowerCase().includes('create_time');
       
       return {
         title: key,
         dataIndex: key,
         key,
         ellipsis: true,
-        sorter: !isAddressField ? (a: any, b: any) => {
-          const aVal = parseFloat(a[key] || 0);
-          const bVal = parseFloat(b[key] || 0);
-          return aVal - bVal;
-        } : undefined,
-        sortDirections: !isAddressField ? ['descend', 'ascend'] as SortOrder[] : undefined,
+        sorter: isCreateTime
+          ? (a: any, b: any) => {
+              const parseTs = (v: any): number => {
+                if (v === null || v === undefined) return 0;
+                if (typeof v === 'number') {
+                  // 可能是秒或毫秒
+                  return v > 1e12 ? v : v * 1000;
+                }
+                if (typeof v === 'string') {
+                  const n = Number(v);
+                  if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
+                  const d = Date.parse(v);
+                  return Number.isNaN(d) ? 0 : d;
+                }
+                return 0;
+              };
+              return parseTs(a[key]) - parseTs(b[key]);
+            }
+          : (!isAddressField
+            ? (a: any, b: any) => {
+                const aVal = parseFloat(a[key] || 0);
+                const bVal = parseFloat(b[key] || 0);
+                return aVal - bVal;
+              }
+            : undefined),
+        sortDirections: (isCreateTime || !isAddressField) ? ['descend', 'ascend'] as SortOrder[] : undefined,
         render: (value: any) => {
           if (value === null || value === undefined) return "";
           if (typeof value === "object") return JSON.stringify(value);
-          if (!isAddressField && !isNaN(parseFloat(value))) {
+          if (!isAddressField && !isNaN(parseFloat(value)) && !isCreateTime) {
             return parseFloat(value).toLocaleString();
+          }
+          if (isCreateTime) {
+            const ts = (() => {
+              if (typeof value === 'number') return value > 1e12 ? value : value * 1000;
+              const n = Number(value);
+              if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
+              const d = Date.parse(value);
+              return Number.isNaN(d) ? 0 : d;
+            })();
+            if (!ts) return String(value);
+            const date = new Date(ts);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            const second = String(date.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
           }
           return String(value);
         },
@@ -102,12 +151,84 @@ const UniLogTable: React.FC = () => {
     });
   }, [rows]);
 
+  const windowStats: WindowStat[] = useMemo(() => {
+    const now = Date.now();
+    const windows = [
+      { key: '1h', label: '1 hour', ms: 1 * 60 * 60 * 1000 },
+      { key: '24h', label: '24 hours', ms: 24 * 60 * 60 * 1000 },
+      { key: '72h', label: '72 hours', ms: 72 * 60 * 60 * 1000 },
+      { key: '30d', label: '1 month', ms: 30 * 24 * 60 * 60 * 1000 },
+    ];
+
+    const parseTs = (v: any): number => {
+      if (v === null || v === undefined) return 0;
+      if (typeof v === 'number') return v > 1e12 ? v : v * 1000;
+      const n = Number(v);
+      if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
+      const d = Date.parse(v);
+      return Number.isNaN(d) ? 0 : d;
+    };
+
+    const numeric = (v: any): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const results: WindowStat[] = windows.map(w => {
+      const rowsInWindow = filteredRows.filter(r => {
+        const ts = parseTs(r.create_time ?? r.update_time ?? r.timestamp);
+        return ts >= now - w.ms;
+      });
+
+      const sums = rowsInWindow.reduce(
+        (acc, r) => {
+          acc.total += numeric((r as any).total);
+          acc.success += numeric((r as any).success);
+          acc.failure += numeric((r as any).failure);
+          acc.revenue_cfx += numeric((r as any).revenue_cfx);
+          acc.revenue_usdt += numeric((r as any).revenue_usdt);
+          const firstFailVal = (r as any).is_first_fail;
+          acc.is_first_fail += firstFailVal ? 1 : 0;
+          return acc;
+        },
+        { total: 0, success: 0, failure: 0, revenue_cfx: 0, revenue_usdt: 0, is_first_fail: 0 }
+      );
+
+      return { key: w.key, label: w.label, ...sums } as WindowStat;
+    });
+
+    return results;
+  }, [filteredRows]);
+
   return (
     <div>
-      {/* 筛选和操作 */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+          {windowStats.map(stat => (
+            <div key={stat.key} style={{ 
+              border: '1px solid #d9d9d9', 
+              borderRadius: 6, 
+              padding: 12, 
+              backgroundColor: '#fafafa' 
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: 8, color: '#1890ff' }}>
+                {stat.label}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: '13px' }}>
+                <div>total: <strong>{stat.total}</strong></div>
+                <div>success: <strong>{stat.success}</strong></div>
+                <div>failure: <strong>{stat.failure}</strong></div>
+                <div>is_first_fail: <strong>{stat.is_first_fail}</strong></div>
+                <div>revenue_cfx: <strong>{stat.revenue_cfx.toFixed(2)}</strong></div>
+                <div>revenue_usdt: <strong>{stat.revenue_usdt.toFixed(2)}</strong></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
         <Input
-          placeholder="筛选地址..."
+          placeholder="filter address..."
           prefix={<SearchOutlined />}
           value={addressFilter}
           onChange={(e) => setAddressFilter(e.target.value)}
@@ -115,11 +236,10 @@ const UniLogTable: React.FC = () => {
           allowClear
         />
         <Button onClick={fetchData} disabled={loading}>
-          刷新
         </Button>
         {loading && <Spin />}
         <Typography.Text type="secondary">
-          显示 {filteredRows.length} / {rows.length} 条
+          total {filteredRows.length} / {rows.length} lines
         </Typography.Text>
       </div>
 
