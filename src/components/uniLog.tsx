@@ -97,20 +97,26 @@ const UniLogTable: React.FC = () => {
         ellipsis: true,
         sorter: isCreateTime
           ? (a: any, b: any) => {
-              const parseTs = (v: any): number => {
-                if (v === null || v === undefined) return 0;
-                if (typeof v === 'number') {
-                  // 可能是秒或毫秒
-                  return v > 1e12 ? v : v * 1000;
+            const parseTs = (v: any): number => {
+              if (v === null || v === undefined) return 0;
+              if (typeof v === 'number') {
+                // 如果是秒级时间戳，转换为毫秒
+                const ts = v > 1e12 ? v : v * 1000;
+                // UTC时间转换为UTC+7，减去7小时的毫秒数
+                return ts - (8 * 60 * 60 * 1000);
+              }
+              if (typeof v === 'string') {
+                const n = Number(v);
+                if (!Number.isNaN(n)) {
+                  const ts = n > 1e12 ? n : n * 1000;
+                  return ts - (8 * 60 * 60 * 1000);
                 }
-                if (typeof v === 'string') {
-                  const n = Number(v);
-                  if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
-                  const d = Date.parse(v);
-                  return Number.isNaN(d) ? 0 : d;
-                }
-                return 0;
-              };
+                const d = Date.parse(v);
+                if (Number.isNaN(d)) return 0;
+                return d - (8 * 60 * 60 * 1000);
+              }
+              return 0;
+            };
               return parseTs(a[key]) - parseTs(b[key]);
             }
           : (!isAddressField
@@ -129,11 +135,18 @@ const UniLogTable: React.FC = () => {
           }
           if (isCreateTime) {
             const ts = (() => {
-              if (typeof value === 'number') return value > 1e12 ? value : value * 1000;
+              if (typeof value === 'number') {
+                const timestamp = value > 1e12 ? value : value * 1000;
+                return timestamp - (8 * 60 * 60 * 1000); // UTC转UTC+7
+              }
               const n = Number(value);
-              if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
+              if (!Number.isNaN(n)) {
+                const timestamp = n > 1e12 ? n : n * 1000;
+                return timestamp - (8 * 60 * 60 * 1000);
+              }
               const d = Date.parse(value);
-              return Number.isNaN(d) ? 0 : d;
+              if (Number.isNaN(d)) return 0;
+              return d - (8 * 60 * 60 * 1000);
             })();
             if (!ts) return String(value);
             const date = new Date(ts);
@@ -162,11 +175,21 @@ const UniLogTable: React.FC = () => {
 
     const parseTs = (v: any): number => {
       if (v === null || v === undefined) return 0;
-      if (typeof v === 'number') return v > 1e12 ? v : v * 1000;
+      if (typeof v === 'number') {
+        // 如果是秒级时间戳，转换为毫秒
+        const ts = v > 1e12 ? v : v * 1000;
+        // UTC时间转换为UTC+7，减去7小时的毫秒数
+        return ts - (8 * 60 * 60 * 1000);
+      }
       const n = Number(v);
-      if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
+      if (!Number.isNaN(n)) {
+        const ts = n > 1e12 ? n : n * 1000;
+        return ts - (8 * 60 * 60 * 1000);
+      }
       const d = Date.parse(v);
-      return Number.isNaN(d) ? 0 : d;
+      if (Number.isNaN(d)) return 0;
+      // 如果解析的是UTC时间字符串，也需要转换
+      return d - (8 * 60 * 60 * 1000);
     };
 
     const numeric = (v: any): number => {
