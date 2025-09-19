@@ -20,6 +20,97 @@ const UniLogTable: React.FC = () => {
   const [filteredRows, setFilteredRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [addressFilter, setAddressFilter] = useState<string>("");
+  const [aiSummary, setAiSummary] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+
+  const parseTs = (v: any): number => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') {
+      const ts = v > 1e12 ? v : v * 1000;
+      return ts + (8 * 60 * 60 * 1000);
+    }
+    const n = Number(v);
+    if (!Number.isNaN(n)) {
+      const ts = n > 1e12 ? n : n * 1000;
+      return ts + (8 * 60 * 60 * 1000);
+    }
+    const d = Date.parse(v);
+    if (Number.isNaN(d)) return 0;
+    return d + (8 * 60 * 60 * 1000);
+  };
+
+  const requestAiSummary = async (sourceRows: Row[]) => {
+    try {
+      setAiLoading(true);
+      const now = Date.now();
+      const oneHourMs = 24*60 * 60 * 1000;
+      const rowsIn1h = sourceRows.filter(r => {
+        const ts = parseTs((r as any).create_time ?? (r as any).update_time ?? (r as any).timestamp);
+        return ts >= now - oneHourMs;
+      });
+
+      const toNum = (v: any) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      };
+
+      const summary = rowsIn1h.reduce(
+        (acc, r) => {
+          acc.total += toNum((r as any).total);
+          acc.success += toNum((r as any).success);
+          acc.failure += toNum((r as any).failure);
+          acc.revenue_cfx += toNum((r as any).revenue_cfx);
+          acc.revenue_usdt += toNum((r as any).revenue_usdt);
+          const firstFailVal = (r as any).is_first_fail;
+          acc.is_first_fail += firstFailVal ? 1 : 0;
+          return acc;
+        },
+        { total: 0, success: 0, failure: 0, revenue_cfx: 0, revenue_usdt: 0, is_first_fail: 0 }
+      );
+
+      // 选取收益前3地址，避免 prompt 过长
+      const topAddresses = [...rowsIn1h]
+        .sort((a, b) => toNum((b as any).revenue_usdt) - toNum((a as any).revenue_usdt))
+        .slice(0, 3)
+        .map(r => ({ address: (r as any).address, revenue_usdt: toNum((r as any).revenue_usdt) }));
+
+      const successRate = summary.total > 0 ? (summary.success / summary.total) * 100 : 0;
+
+      const prompt = `指标：\n- total: ${summary.total}\n- success: ${summary.success}\n- failure: ${summary.failure}\n- success_rate: ${successRate.toFixed(2)}%\n- revenue_cfx: ${summary.revenue_cfx.toFixed(2)}\n- revenue_usdt: ${summary.revenue_usdt.toFixed(2)}\n- is_first_fail_count: ${summary.is_first_fail}\n- top3_by_revenue_usdt: ${topAddresses.map(t => `${t.address || 'N/A'}:${t.revenue_usdt.toFixed(2)}`).join(', ')}`;
+
+      const res = await fetch(`/ai?prompt=${encodeURIComponent(prompt)}`);
+      const json = await res.json();
+
+      const extractAiText = (obj: any): string => {
+        if (!obj || typeof obj !== 'object') return '';
+        if (typeof obj.response === 'string') return obj.response;
+        if (typeof obj.output_text === 'string') return obj.output_text;
+        if (typeof obj.text === 'string') return obj.text;
+        const outputArr = obj.output;
+        if (Array.isArray(outputArr)) {
+          const first = outputArr[1];
+          const content = first?.content;
+          if (Array.isArray(content) && typeof content[0]?.text === 'string') return content[0].text;
+          if (typeof first?.text === 'string') return first.text;
+        }
+        const resultResp = obj.result?.response;
+        if (typeof resultResp === 'string') return resultResp;
+        const choices = obj.choices;
+        if (Array.isArray(choices)) {
+          const candidate = choices[0]?.message?.content ?? choices[0]?.delta?.content ?? choices[0]?.text;
+          if (typeof candidate === 'string') return candidate;
+        }
+        return '';
+      };
+
+      const text = extractAiText(json);
+      setAiSummary(text || '');
+    } catch (e: any) {
+      setAiSummary('AI 总结生成失败');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -32,6 +123,7 @@ const UniLogTable: React.FC = () => {
       const data: Row[] = json?.data || [];
       setRows(data);
       setFilteredRows(data);
+      requestAiSummary(data);
     } catch (e: any) {
       message.error(e?.message || "加载失败");
     } finally {
@@ -225,6 +317,27 @@ const UniLogTable: React.FC = () => {
 
   return (
     <div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ 
+          border: '1px solid #d9d9d9', 
+          borderRadius: 6, 
+          padding: 12, 
+          backgroundColor: '#fffbe6',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ maxWidth: '85%' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#fa8c16' }}>AI Report(24hour)</div>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{aiLoading ? 'loading...' : (aiSummary || 'none')}</div>
+          </div>
+          <div>
+            <Button size="small" onClick={() => requestAiSummary(filteredRows)} loading={aiLoading}>
+              rnew
+            </Button>
+          </div>
+        </div>
+      </div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
           {windowStats.map(stat => (
