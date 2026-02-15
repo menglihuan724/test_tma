@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Table, Spin, Typography, message, Button, Input, Tag } from "antd";
-import type { SortOrder } from "antd/es/table/interface";
+import type { SortOrder, SorterResult, TablePaginationConfig } from "antd/es/table/interface";
+import type { FilterValue } from "antd/es/table/interface";
 import { SearchOutlined } from "@ant-design/icons";
 
 type Row = Record<string, any> & { address?: string };
@@ -22,6 +23,7 @@ const UniLogTable: React.FC = () => {
   const [addressFilter, setAddressFilter] = useState<string>("");
   const [aiSummary, setAiSummary] = useState<string>("");
   const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [sortedInfo, setSortedInfo] = useState<SorterResult<Row>>({});
 
   const parseTs = (v: any): number => {
     if (v === null || v === undefined) return 0;
@@ -189,26 +191,24 @@ const UniLogTable: React.FC = () => {
         ellipsis: true,
         sorter: isCreateTime
           ? (a: any, b: any) => {
-            const parseTs = (v: any): number => {
-              if (v === null || v === undefined) return 0;
-              if (typeof v === 'number') {
-                // 如果是秒级时间戳，转换为毫秒
-                const ts = v > 1e12 ? v : v * 1000;
-                // UTC时间转换为UTC+7，减去7小时的毫秒数
-                return ts +(8 * 60 * 60 * 1000);
-              }
-              if (typeof v === 'string') {
-                const n = Number(v);
-                if (!Number.isNaN(n)) {
-                  const ts = n > 1e12 ? n : n * 1000;
-                  return ts +(8 * 60 * 60 * 1000);
+              const parseTs = (v: any): number => {
+                if (v === null || v === undefined) return 0;
+                if (typeof v === 'number') {
+                  const ts = v > 1e12 ? v : v * 1000;
+                  return ts + (8 * 60 * 60 * 1000);
                 }
-                const d = Date.parse(v);
-                if (Number.isNaN(d)) return 0;
-                return d +(8 * 60 * 60 * 1000);
-              }
-              return 0;
-            };
+                if (typeof v === 'string') {
+                  const n = Number(v);
+                  if (!Number.isNaN(n)) {
+                    const ts = n > 1e12 ? n : n * 1000;
+                    return ts + (8 * 60 * 60 * 1000);
+                  }
+                  const d = Date.parse(v);
+                  if (Number.isNaN(d)) return 0;
+                  return d + (8 * 60 * 60 * 1000);
+                }
+                return 0;
+              };
               return parseTs(a[key]) - parseTs(b[key]);
             }
           : (!isAddressField
@@ -218,7 +218,9 @@ const UniLogTable: React.FC = () => {
                 return aVal - bVal;
               }
             : undefined),
-        sortDirections: (isCreateTime || !isAddressField) ? ['descend', 'ascend'] as SortOrder[] : undefined,
+        sortDirections: (isCreateTime || !isAddressField) ? ['ascend', 'descend'] as SortOrder[] : undefined,
+        sortOrder: sortedInfo.columnKey === key ? sortedInfo.order : null,
+        showSorterTooltip: false,
         render: (value: any) => {
           if (value === null || value === undefined) return "";
           if (typeof value === "object") return JSON.stringify(value);
@@ -229,16 +231,16 @@ const UniLogTable: React.FC = () => {
             const ts = (() => {
               if (typeof value === 'number') {
                 const timestamp = value > 1e12 ? value : value * 1000;
-                return timestamp +(8 * 60 * 60 * 1000); // UTC转UTC+7
+                return timestamp + (8 * 60 * 60 * 1000);
               }
               const n = Number(value);
               if (!Number.isNaN(n)) {
                 const timestamp = n > 1e12 ? n : n * 1000;
-                return timestamp +(8 * 60 * 60 * 1000);
+                return timestamp + (8 * 60 * 60 * 1000);
               }
               const d = Date.parse(value);
               if (Number.isNaN(d)) return 0;
-              return d +(8 * 60 * 60 * 1000);
+              return d + (8 * 60 * 60 * 1000);
             })();
             if (!ts) return String(value);
             const date = new Date(ts);
@@ -254,7 +256,7 @@ const UniLogTable: React.FC = () => {
         },
       };
     });
-  }, [rows]);
+  }, [rows, sortedInfo]);
 
   const windowStats: WindowStat[] = useMemo(() => {
     const now = Date.now();
@@ -385,6 +387,10 @@ const UniLogTable: React.FC = () => {
         columns={columns}
         size="small"
         scroll={{ x: true }}
+        onChange={(pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, sorter: SorterResult<Row> | SorterResult<Row>[]) => {
+          const currentSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+          setSortedInfo(currentSorter);
+        }}
         pagination={{ 
           pageSize: 20, 
           showSizeChanger: true,

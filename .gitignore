@@ -120,3 +120,5 @@ TODO.md
 .venv
 src/zero/*
 .wrangler/*
+*.sql
+server/*
