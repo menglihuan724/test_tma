@@ -174,7 +174,10 @@ const UniLogTable: React.FC = () => {
   }, [filteredRows]);
 
   const columns = useMemo(() => {
+    // 使用 filteredRows 来生成列定义，确保与显示数据一致
     const fieldSet = new Set<string>();
+    filteredRows.forEach((r) => Object.keys(r).forEach((k) => fieldSet.add(k)));
+    // 同时也检查 rows，确保新加载的数据字段不丢失
     rows.forEach((r) => Object.keys(r).forEach((k) => fieldSet.add(k)));
     const keys = Array.from(fieldSet);
     
@@ -184,42 +187,50 @@ const UniLogTable: React.FC = () => {
       );
       const isCreateTime = key.toLowerCase().includes('create_time');
       
+      // 创建持久化的 sorter 函数，避免每次渲染创建新函数
+      const handleSorter = isCreateTime
+        ? (a: Row, b: Row) => {
+            const parseTs = (v: any): number => {
+              if (v === null || v === undefined) return 0;
+              if (typeof v === 'number') {
+                const ts = v > 1e12 ? v : v * 1000;
+                return ts + (8 * 60 * 60 * 1000);
+              }
+              if (typeof v === 'string') {
+                const n = Number(v);
+                if (!Number.isNaN(n)) {
+                  const ts = n > 1e12 ? n : n * 1000;
+                  return ts + (8 * 60 * 60 * 1000);
+                }
+                const d = Date.parse(v);
+                if (Number.isNaN(d)) return 0;
+                return d + (8 * 60 * 60 * 1000);
+              }
+              return 0;
+            };
+            const aVal = a[key];
+            const bVal = b[key];
+            return parseTs(aVal) - parseTs(bVal);
+          }
+        : (!isAddressField
+          ? (a: Row, b: Row) => {
+              const aVal = parseFloat(a[key] || 0);
+              const bVal = parseFloat(b[key] || 0);
+              return aVal - bVal;
+            }
+          : undefined);
+      
+      // 确定当前列的排序状态
+      const currentSortOrder = sortedInfo.columnKey === key ? sortedInfo.order : undefined;
+      
       return {
         title: key,
         dataIndex: key,
         key,
         ellipsis: true,
-        sorter: isCreateTime
-          ? (a: any, b: any) => {
-              const parseTs = (v: any): number => {
-                if (v === null || v === undefined) return 0;
-                if (typeof v === 'number') {
-                  const ts = v > 1e12 ? v : v * 1000;
-                  return ts + (8 * 60 * 60 * 1000);
-                }
-                if (typeof v === 'string') {
-                  const n = Number(v);
-                  if (!Number.isNaN(n)) {
-                    const ts = n > 1e12 ? n : n * 1000;
-                    return ts + (8 * 60 * 60 * 1000);
-                  }
-                  const d = Date.parse(v);
-                  if (Number.isNaN(d)) return 0;
-                  return d + (8 * 60 * 60 * 1000);
-                }
-                return 0;
-              };
-              return parseTs(a[key]) - parseTs(b[key]);
-            }
-          : (!isAddressField
-            ? (a: any, b: any) => {
-                const aVal = parseFloat(a[key] || 0);
-                const bVal = parseFloat(b[key] || 0);
-                return aVal - bVal;
-              }
-            : undefined),
-        sortDirections: (isCreateTime || !isAddressField) ? ['ascend', 'descend'] as SortOrder[] : undefined,
-        sortOrder: sortedInfo.columnKey === key ? sortedInfo.order : null,
+        sorter: handleSorter,
+        sortOrder: currentSortOrder,
+        sortDirections: ['ascend', 'descend'] as SortOrder[],
         showSorterTooltip: false,
         render: (value: any) => {
           if (value === null || value === undefined) return "";
@@ -256,7 +267,7 @@ const UniLogTable: React.FC = () => {
         },
       };
     });
-  }, [rows, sortedInfo]);
+  }, [rows, filteredRows, sortedInfo]);
 
   const windowStats: WindowStat[] = useMemo(() => {
     const now = Date.now();
@@ -382,14 +393,23 @@ const UniLogTable: React.FC = () => {
       </div>
 
       <Table
-        rowKey={(r) => String(r.address ?? JSON.stringify(r))}
+        rowKey={(r) => r.address || r.id || r.key || String(r.create_time) + Math.random().toString(36).slice(2)}
         dataSource={filteredRows}
         columns={columns}
         size="small"
         scroll={{ x: true }}
         onChange={(pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, sorter: SorterResult<Row> | SorterResult<Row>[]) => {
-          const currentSorter = Array.isArray(sorter) ? sorter[0] : sorter;
-          setSortedInfo(currentSorter);
+          // 处理多列排序和空排序状态
+          if (Array.isArray(sorter)) {
+            // 多列排序，取第一个
+            setSortedInfo(sorter[0] || {});
+          } else if (sorter && sorter.columnKey) {
+            // 单列排序
+            setSortedInfo(sorter);
+          } else {
+            // 清除排序状态
+            setSortedInfo({});
+          }
         }}
         pagination={{ 
           pageSize: 20, 
