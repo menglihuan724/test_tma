@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import PolymarketArbitrage from '../components/PolymarketArbitrage';
+// import PolymarketArbitrage from '../components/PolymarketArbitrage';
 
 const PageContainer = styled.div`
   display: flex;
@@ -11,7 +11,7 @@ const PageContainer = styled.div`
 const ArbitragePage: React.FC = () => {
   return (
     <PageContainer>
-      <PolymarketArbitrage />
+      {/* <PolymarketArbitrage /> */}
     </PageContainer>
   );
 };
