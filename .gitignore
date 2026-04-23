@@ -122,3 +122,8 @@ src/zero/*
 .wrangler/*
 *.sql
 server/*
+.dev.vars
+.dev.vars
+.env**
+zfun/**
+wrangler.toml

@@ -140,7 +140,7 @@ const initEnv = (): EnvConfig => {
       ? sensitiveString(import.meta.env.VITE_OK_DEX_PASS) 
       : import.meta.env.VITE_OK_DEX_PASS,
     VITE_OK_DEX_ID: import.meta.env.VITE_OK_DEX_ID,
-    VITE_OK_URL: import.meta.env.VITE_OK_URL,
+    VITE_OK_URL: import.meta.env.VITE_OK_URL || '/okx',
     VITE_WALLETS: environment === "prod" 
       ? sensitiveArray(import.meta.env.VITE_WALLETS)
       : (import.meta.env.VITE_WALLETS ? JSON.parse(import.meta.env.VITE_WALLETS) : []),

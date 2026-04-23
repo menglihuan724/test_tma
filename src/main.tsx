@@ -1,10 +1,30 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { ConfigProvider } from 'antd'
 import AppRouter from './AppRouter'
 import './index.css'
 import { initializeSecureEnv } from './config/env'
 import { initializeClients } from './services/clientManager'
 import { ensureInitialized } from './decrypt_rs'
+import { antdThemeConfig, colors } from './config/theme'
+
+// Error page component
+const ErrorPage = () => (
+  <div style={{ 
+    textAlign: 'center', 
+    marginTop: '50px',
+    background: colors.bgPrimary,
+    color: colors.textPrimary,
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}>
+    <h1>Authentication Required</h1>
+    <p style={{ color: colors.textSecondary }}>Please refresh the page to try again.</p>
+  </div>
+)
 
 // 初始化安全环境
 const initApp = async () => {
@@ -14,11 +34,10 @@ const initApp = async () => {
     // 如果在生产环境中无法初始化，可以显示错误消息或登录页面
     ReactDOM.render(
       <React.StrictMode>
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h1>Authentication Required</h1>
-        <p>Please refresh the page to try again.</p>
-      </div>
-    </React.StrictMode>,
+        <ConfigProvider theme={antdThemeConfig}>
+          <ErrorPage />
+        </ConfigProvider>
+      </React.StrictMode>,
       document.getElementById('root')
     ) 
     return
@@ -30,10 +49,12 @@ const initApp = async () => {
   // 正常渲染应用
   ReactDOM.render(
     <React.StrictMode>
-      <AppRouter />
+      <ConfigProvider theme={antdThemeConfig}>
+        <AppRouter />
+      </ConfigProvider>
     </React.StrictMode>,
     document.getElementById('root')
   ) 
 }
 
-initApp() 
+initApp()

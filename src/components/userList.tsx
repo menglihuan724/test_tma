@@ -20,6 +20,7 @@ import type { Address } from 'viem';
 import styled from 'styled-components';
 import env from '../config/env';
 import { ReloadOutlined } from '@ant-design/icons';
+import { colors } from '../config/theme';
 
 interface UserInfo {
   address: string;
@@ -43,18 +44,43 @@ const StyledSpace = styled(Space)`
 
 const StyledCard = styled(Card)`
   width: 100%;
+  background: ${colors.bgTertiary} !important;
+  border: 1px solid ${colors.borderLight} !important;
+  border-radius: 12px !important;
+
+  .ant-card-head {
+    border-bottom: 1px solid ${colors.borderLight};
+    color: ${colors.textPrimary};
+  }
+
+  .ant-card-head-title {
+    color: ${colors.textPrimary};
+  }
+
   .ant-card-body {
-    padding: 12px;
+    padding: 16px;
     @media (max-width: 768px) {
-      padding: 8px;
+      padding: 12px;
     }
   }
 `;
 
 const SummaryCard = styled(Card)`
   margin-bottom: 16px;
+  background: ${colors.bgSecondary} !important;
+  border: 1px solid ${colors.borderLight} !important;
+  border-radius: 8px !important;
+
   .ant-card-body {
-    padding: 12px;
+    padding: 16px;
+  }
+
+  .ant-statistic-title {
+    color: ${colors.textSecondary} !important;
+  }
+
+  .ant-statistic-content {
+    color: ${colors.textPrimary} !important;
   }
 `;
 
@@ -70,8 +96,9 @@ const AddressCell = styled.div`
 
 const HashCell = styled.div`
   cursor: pointer;
+  color: ${colors.textPrimary};
   &:hover {
-    color: #1890ff;
+    color: ${colors.primary};
   }
 `;
 

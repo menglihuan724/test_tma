@@ -3,21 +3,39 @@ import { Card, Space, Typography, Spin, Button, Progress } from 'antd';
 import styled from 'styled-components';
 import { getMarketOverview, getFearAndGreedIndex, getFearAndGreedLevel, MarketData } from '../services/coinmarketClient';
 import { ReloadOutlined } from '@ant-design/icons';
+import { colors } from '../config/theme';
 
 const { Title, Text } = Typography;
 
 const StyledCard = styled(Card)`
   width: 100%;
+  background: ${colors.bgTertiary} !important;
+  border: 1px solid ${colors.borderLight} !important;
+  border-radius: 12px !important;
+
+  .ant-card-head {
+    border-bottom: 1px solid ${colors.borderLight};
+    color: ${colors.textPrimary};
+  }
+
+  .ant-card-head-title {
+    color: ${colors.textPrimary};
+  }
+
   .ant-card-body {
-    padding: 12px;
+    padding: 16px;
   }
 `;
 
 const OverviewContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-top: 16px;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
   
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
@@ -33,14 +51,54 @@ const SectionTitle = styled.h3`
   margin-bottom: 16px;
   font-weight: bold;
   grid-column: 1 / -1;
+  color: ${colors.textPrimary};
 `;
 
 const MetricCard = styled(Card)`
   text-align: center;
+  background: ${colors.bgSecondary} !important;
+  border: 1px solid ${colors.borderLight} !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: ${colors.borderPrimary} !important;
+    transform: translateY(-2px);
+  }
+
   .ant-card-body {
-    padding: 12px;
+    padding: 16px;
+  }
+
+  h4.ant-typography {
+    color: ${colors.textSecondary} !important;
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
   }
 `;
+
+const FearGreedLabels = styled.div`
+  display: none;
+  justify-content: space-between;
+  font-size: 12px;
+  color: ${colors.textSecondary};
+
+  @media (min-width: 768px) {
+    display: flex;
+  }
+`;
+
+const formatTimestamp = (timestamp: number | string) => {
+  if (!timestamp) return 'N/A';
+  
+  // Handle Unix timestamp (seconds)
+  const ts = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp;
+  const date = ts > 1e12 ? new Date(ts) : new Date(ts * 1000);
+  
+  if (isNaN(date.getTime())) return 'N/A';
+  
+  return date.toLocaleString();
+};
 
 const formatCurrency = (value: number, decimals = 2) => {
   if (value >= 1e12) return `$${(value / 1e12).toFixed(decimals)} T`;
@@ -128,15 +186,15 @@ const MarketOverview: React.FC = () => {
                   strokeColor={getFearAndGreedColor(fearAndGreedData.value)}
                   style={{ margin: '20px 0' }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <FearGreedLabels>
                   <Text>Extreme Fear</Text>
                   <Text>Fear</Text>
                   <Text>Neutral</Text>
                   <Text>Greed</Text>
                   <Text>Extreme Greed</Text>
-                </div>
-                <Text type="secondary" style={{ marginTop: '10px', display: 'block' }}>
-                  Last updated: {new Date(fearAndGreedData.timestamp).toLocaleString()}
+                </FearGreedLabels>
+                <Text type="secondary" style={{ marginTop: '10px', display: 'block', fontSize: '12px' }}>
+                  Last updated: {formatTimestamp(fearAndGreedData.timestamp)}
                 </Text>
               </MetricCard>
             </>

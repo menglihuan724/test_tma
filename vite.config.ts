@@ -1,54 +1,75 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import envConfig from './src/config/env'
 
+// 加载环境变量
+const env = loadEnv('development', process.cwd(), '');
+
+// 开发模式选择
+// 1. wrangler pages dev (推荐) - 与生产环境完全一致
+// 2. vite direct - Vite 直接代理 (快速开发)
+const USE_WRANGLER = env.VITE_USE_WRANGLER !== 'false';  // 默认使用 wrangler
+const WRANGLER_PORT = parseInt(env.VITE_WRANGLER_PORT || '8788');
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
-    host: true, // 允许外部访问
-    open: true,  // 自动打开浏览器
-    proxy: {
-      '/okx-proxy': {
-        target: `https://faku.cflpool.io/okx`,
+    port: USE_WRANGLER ? 3000 : 3000,
+    host: true,
+    open: false,  // wrangler 模式下不自动打开
+    proxy: USE_WRANGLER ? {
+      // ============================================
+      // 模式: wrangler pages dev
+      // 所有请求代理到 wrangler (Functions + 静态文件)
+      // ============================================
+      '/': {
+        target: `http://localhost:${WRANGLER_PORT}`,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/okx-proxy/, ''),
+        // 不 rewrite，保持路径一致
+        rewrite: (path) => path,
         secure: false,
+        // 代理 WebSocket (HMR)
+        ws: true,
       },
-      '/api-proxy': {
-        target: `https://api.faku.info`,
+    } : {
+      // ============================================
+      // 模式: Vite 直接代理 (备用)
+      // ============================================
+      '/okx': {
+        target: 'https://www.okx.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api-proxy/, ''),
-        secure: false,
-        headers:{
-         "Access-Control-Allow-Origin":"*"
-        }
+        rewrite: (path) => path.replace(/^\/okx/, '/api/v5/wallet'),
+        secure: true,
       },
-      '/coin-proxy': {
-        target: `https://faku.cflpool.io/coin`,
+      '/coingecko': {
+        target: 'https://api.coingecko.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/coin-proxy/, ''),
-        secure: false,
+        rewrite: (path) => path.replace(/^\/coingecko/, '/api/v3'),
+        secure: true,
+      },
+      '/coin': {
+        target: 'https://pro-api.coinmarketcap.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/coin/, ''),
+        secure: true,
         headers: {
-          "X-CMC_PRO_API_KEY": "e3ae2fc1-1f63-4a71-8cad-954483653903" ,
+          'X-CMC_PRO_API_KEY': process.env.VITE_COINMARKETCAP_API_KEY || '',
         },
-      }
-    }
+      },
+    },
   },
   base: './',
-  // 添加对 WASM 的支持
   optimizeDeps: {
     exclude: ['../pkg/conflux_wasm.js']
   },
-  
-  // 确保 WASM 文件被正确处理
   assetsInclude: ['**/*.wasm'],
-  
-  // 如果需要，添加解析别名
   resolve: {
     alias: {
-      // 现有别名...
-      '@wasm': require('path').resolve(__dirname, 'src/pkg')
+      '@wasm': require('path').resolve(__dirname, 'src/pkg'),
+    }
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
     }
   }
 })

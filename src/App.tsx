@@ -35,6 +35,7 @@ import UserList from "./components/userList";
 import CreateAccount from "./components/createAccount";
 import MarketOverview from "./components/marketOverview";
 import UniLogTable from "./components/uniLog";
+import PolymarketArbitrage from "./components/PolymarketArbitrage";
 import { getFakuClient, getOkxClient } from "./services/clientManager";
 
 const { Header, Content } = Layout;
@@ -600,6 +601,10 @@ function App() {
             <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <MarketOverview />
             </Space>
+          </TabPane>
+
+          <TabPane tab="Arbitrage" key="arbitrage">
+            <PolymarketArbitrage />
           </TabPane>
 
           {/* <TabPane tab="IP" key="ip">

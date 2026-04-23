@@ -1,95 +1,200 @@
-/* 这里将放置您原有的样式 */
+/* Global Styles - Dark Theme with Gold Accent */
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Primary Colors (Gold) */
+  --color-primary: #F59E0B;
+  --color-primary-dark: #D97706;
+  --color-primary-light: #FBBF24;
+  
+  /* Background Colors (Dark Theme) */
+  --color-bg-primary: #0F172A;
+  --color-bg-secondary: #1E293B;
+  --color-bg-tertiary: #334155;
+  
+  /* Text Colors */
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-disabled: #64748B;
+  
+  /* Functional Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Border Colors */
+  --color-border-light: rgba(255, 255, 255, 0.1);
+  --color-border-medium: rgba(255, 255, 255, 0.2);
+  
+  /* Layout */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 80px;
+  --topbar-height: 64px;
+  --content-max-width: 1400px;
+  
+  /* Typography */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 }
 
+/* Body Styles */
 body {
-  --bg-color: var(--tg-theme-bg-color);
-  font: 12px/18px "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, Verdana, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--tg-theme-text-color);
-  margin: 48px 24px;
+  margin: 0;
   padding: 0;
-  color-scheme: var(--tg-color-scheme);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-medium);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-disabled);
+}
+
+/* Link Styles */
 a {
-  color: var(--tg-theme-link-color);
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.viewport {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: var(--tg-viewport-stable-height, 100vh);
-  pointer-events: none;
-  transition: all 0.2s ease;
+a:hover {
+  color: var(--color-primary-light);
 }
 
-.viewport:after {
-  content: "";
-  display: block;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  border-width: 4px;
-  border-style: solid;
-  border-image: linear-gradient(45deg, rgba(64, 224, 208, 0.5), rgba(173, 255, 47, 0.5)) 1;
+/* Selection Styles */
+::selection {
+  background: rgba(245, 158, 11, 0.3);
+  color: var(--color-text-primary);
 }
 
-.viewport-params {
-  position: absolute;
-  display: inline-block;
-  background: var(--tg-theme-link-color, rgb(64, 224, 208));
-  right: 4px;
-  left: auto;
-  font-size: 8px;
-  padding: 4px;
-  vertical-align: top;
+/* Telegram WebApp Compatibility */
+body.tg-webapp {
+  --bg-color: var(--tg-theme-bg-color, var(--color-bg-primary));
+  background-color: var(--bg-color);
+  color: var(--tg-theme-text-color, var(--color-text-primary));
+  color-scheme: var(--tg-color-scheme, dark);
 }
 
-.viewport-params-size {
-  top: 4px;
+/* Telegram Theme Override - when in Telegram */
+[data-telegram="true"] {
+  --color-bg-primary: var(--tg-theme-bg-color);
+  --color-bg-secondary: var(--tg-theme-secondary-bg-color);
+  --color-text-primary: var(--tg-theme-text-color);
 }
 
-.viewport-params-expand {
-  top: 30px;
+/* Ant Design Global Overrides */
+.ant-typography {
+  color: var(--color-text-primary) !important;
 }
 
-.top-space {
-  margin-top: 10px;
+.ant-typography-secondary {
+  color: var(--color-text-secondary) !important;
 }
 
-/* 暗色主题适配 */
-[data-theme='dark'] .ant-card {
-  background: var(--tg-theme-secondary-bg-color, #1f1f1f);
+.ant-card {
+  background: var(--color-bg-tertiary) !important;
+  border-color: var(--color-border-light) !important;
 }
 
-[data-theme='dark'] .ant-typography {
-  color: var(--tg-theme-text-color, #fff);
+.ant-table {
+  background: transparent !important;
 }
 
-/* 响应式调整 */
+.ant-table-thead > tr > th {
+  background: var(--color-bg-tertiary) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom: 1px solid var(--color-border-light) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--color-border-light) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(245, 158, 11, 0.05) !important;
+}
+
+/* Responsive Utilities */
 @media (max-width: 576px) {
-  .ant-space {
-    gap: 8px !important;
-  }
-  
-  .ant-card {
-    border-radius: 8px;
+  .hide-mobile {
+    display: none !important;
   }
 }
 
-.ant-typography-ellipsis {
-  display: inline-block;
-  max-width: 200px;
-  white-space: nowrap;
+@media (min-width: 577px) and (max-width: 991px) {
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Text Ellipsis Utility */
+.text-ellipsis {
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: bottom;
-} 
+  white-space: nowrap;
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
