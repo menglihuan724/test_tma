@@ -36,6 +36,7 @@ import CreateAccount from "./components/createAccount";
 import MarketOverview from "./components/marketOverview";
 import UniLogTable from "./components/uniLog";
 import PolymarketArbitrage from "./components/PolymarketArbitrage";
+import AaveMonitor from "./components/AaveMonitor";
 import { getFakuClient, getOkxClient } from "./services/clientManager";
 
 const { Header, Content } = Layout;
@@ -605,6 +606,10 @@ function App() {
 
           <TabPane tab="Arbitrage" key="arbitrage">
             <PolymarketArbitrage />
+          </TabPane>
+
+          <TabPane tab="AAVE" key="aave">
+            <AaveMonitor />
           </TabPane>
 
           {/* <TabPane tab="IP" key="ip">

@@ -127,3 +127,5 @@ server/*
 .env**
 zfun/**
 wrangler.toml
+test/**
+lib/**

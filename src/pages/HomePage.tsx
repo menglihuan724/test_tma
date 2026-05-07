@@ -9,6 +9,7 @@ import {
   Badge,
   message,
   Spin,
+  Tabs,
 } from 'antd';
 import { ReloadOutlined, ApiOutlined, RocketOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
@@ -23,6 +24,7 @@ import {
 import env from '../config/env';
 import { getFakuClient, getOkxClient } from '../services/clientManager';
 import { colors } from '../config/theme';
+import AaveMonitor from '../components/AaveMonitor';
 
 const PageContainer = styled.div`
   display: flex;
@@ -272,6 +274,8 @@ const HomePage: React.FC = () => {
 
   return (
     <PageContainer>
+      <Tabs defaultActiveKey="home">
+        <Tabs.TabPane tab="Home" key="home">
       <StyledCard>
         <Space>
           <Button
@@ -441,6 +445,11 @@ const HomePage: React.FC = () => {
           )}
         </Space>
       </StyledCard>
+        </Tabs.TabPane>
+        <Tabs.TabPane tab="AAVE" key="aave">
+          <AaveMonitor />
+        </Tabs.TabPane>
+      </Tabs>
     </PageContainer>
   );
 };

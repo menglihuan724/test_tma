@@ -8,6 +8,7 @@ import UniPage from './pages/UniPage';
 import SuiPage from './pages/SuiPage';
 import MarketPage from './pages/MarketPage';
 import ArbitragePage from './pages/ArbitragePage';
+import AavePage from './pages/AavePage';
 
 function AppRouter() {
   return (
@@ -25,6 +26,7 @@ function AppRouter() {
           <Route path="sui" element={<SuiPage />} />
           <Route path="market" element={<MarketPage />} />
           <Route path="arbitrage" element={<ArbitragePage />} />
+          <Route path="aave" element={<AavePage />} />
         </Route>
         
         {/* Legacy route redirect */}
